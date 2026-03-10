@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+docs-site/.next/
+docs-site/node_modules/
+packages/*/node_modules/
 
 # production
 /build
@@ -32,6 +35,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# Claude Code project instructions (personal workflow, not for public repo)
+CLAUDE.md
 
 # vercel
 .vercel

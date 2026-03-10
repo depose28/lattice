@@ -1,0 +1,158 @@
+# Architecture Overview
+
+Lattice is a Next.js application that renders a 3D graph using Three.js, manages state with Zustand, and communicates with the Anthropic API for Oracle functionality. This page covers the overall architecture, file structure, and key design decisions.
+
+---
+
+## Technology Stack
+
+| Concern | Technology | Why |
+|---|---|---|
+| Framework | Next.js 14 (App Router) | Server components for the shell, client components for Three.js |
+| 3D Rendering | Three.js | Direct WebGL control, InstancedMesh for performance |
+| State | Zustand | Single store, no prop drilling, minimal boilerplate |
+| Styling | Tailwind CSS | Utility-first, no style conflicts with Three.js canvas |
+| UI Primitives | shadcn/ui + Radix | Accessible, unstyled components |
+| AI | Anthropic SDK (Claude Sonnet) | Structured reasoning over 700 models |
+| Layout | d3-force-3d | 3D force-directed graph layout |
+| Language | TypeScript (strict) | Type safety across components and shaders |
+
+---
+
+## File Structure
+
+```
+lattice/
+  app/
+    layout.tsx              # Root layout (metadata, fonts, global styles)
+    page.tsx                # Main page -- composes all components
+    globals.css             # Tailwind directives, global styles
+    api/
+      oracle/
+        route.ts            # POST handler for Oracle queries
+
+  components/
+    graph/
+      LatticeScene.tsx      # Three.js Canvas wrapper, orchestrates the scene
+      NeuronNodes.tsx       # InstancedMesh for all 700 nodes
+      DendriteEdges.tsx     # LineSegments for edge rendering
+      EdgeParticles.tsx     # Points system for directional particles
+
+    ui/
+      InfoPanel.tsx         # Right-side panel for selected node details
+      OraclePanel.tsx       # Oracle input and results UI
+      Tooltip.tsx           # Hover tooltip for nodes
+      DisciplineLegend.tsx  # Bottom legend for discipline toggles
+      LoadingScreen.tsx     # Initial loading / boot sequence
+      SearchBar.tsx         # Cmd+K search modal
+      OnboardingHints.tsx   # First-visit overlay hints
+
+  lib/
+    constants.ts            # ALL colors, timing, sizing -- single source of truth
+    graph/
+      loader.ts             # Loads and parses nodes.json and edges.json
+      layout.ts             # d3-force-3d layout computation and caching
+      types.ts              # TypeScript types for graph data
+
+    three/
+      postprocessing.ts     # Bloom + film grain effect setup
+      shaders/
+        neuronFrag.glsl     # Fragment shader for neuron activation
+        neuronVert.glsl     # Vertex shader for neuron positioning
+
+  store/
+    graphStore.ts           # Zustand store -- single state tree
+
+  hooks/
+    useOracle.ts            # Oracle API communication
+
+  public/
+    data/
+      nodes.json            # 700 mental models (READ ONLY)
+      edges.json            # 2,796 connections (READ ONLY)
+```
+
+---
+
+## Key Design Decisions
+
+### Client vs. Server Components
+
+Next.js App Router distinguishes between server components (rendered on the server) and client components (rendered in the browser). In Lattice:
+
+- **Server components**: `layout.tsx`, metadata, and any static content.
+- **Client components**: Everything under `components/graph/` and `components/ui/`. These use the `'use client'` directive because they depend on browser APIs (Three.js, localStorage, window events).
+
+All Three.js components must be client components. There is no server-side rendering of the 3D scene.
+
+### Single Zustand Store
+
+All application state lives in one Zustand store (`store/graphStore.ts`). There is no prop drilling anywhere in the component tree. Components access state through the `useGraphStore` hook with selectors:
+
+```typescript
+const selectedNodeId = useGraphStore(state => state.selectedNodeId);
+const selectNode = useGraphStore(state => state.selectNode);
+```
+
+This eliminates the complexity of passing callbacks through deeply nested component trees (common in Three.js applications where the scene graph has many layers).
+
+### Colors in One File
+
+Every color constant -- background, nodes, edges, particles, disciplines, activation sequence, bloom parameters -- is defined in `lib/constants.ts`. No colors are hardcoded in components, shaders, or CSS. This makes the visual identity easy to audit and modify.
+
+### Force Layout: Compute Once, Cache Forever
+
+The 3D force-directed layout (computed by d3-force-3d) is expensive: 700 nodes with 2,796 edges takes several seconds. Lattice computes this once and stores the resulting positions in localStorage. On subsequent visits, positions are loaded from cache, and the layout computation is skipped entirely.
+
+The cache key includes a hash of the node and edge data, so if the data changes, the cache is automatically invalidated and the layout recomputes.
+
+### Static Data
+
+The graph data (`nodes.json` and `edges.json`) is static JSON served from the `public/` directory. There is no database, no API endpoint for data, no data processing pipeline at runtime. The data was generated offline (see [Embeddings](/the-graph/embeddings)) and bundled with the application.
+
+This makes deployment trivial: no database setup, no data migration, no connection strings.
+
+---
+
+## Request Flow
+
+### Page Load
+
+1. Browser requests `page.tsx` from Next.js.
+2. Server renders the shell (layout, metadata). Client components are sent as JavaScript bundles.
+3. Browser hydrates client components.
+4. `useGraph` hook fetches `nodes.json` and `edges.json` from `/data/`.
+5. Layout positions are loaded from localStorage (or computed if not cached).
+6. Three.js scene initializes: InstancedMesh, LineSegments, Points.
+7. Boot sequence animation plays.
+8. Graph is interactive.
+
+### Oracle Query
+
+1. User types a query in the Oracle panel.
+2. `useOracle` hook sends a POST request to `/api/oracle`.
+3. The API route constructs a prompt including all 700 models and the user's query.
+4. The prompt is sent to Claude Sonnet via the Anthropic SDK.
+5. Claude's response (synthesis + 15 model recommendations) is parsed and returned.
+6. The Oracle panel displays results; recommended models fire on the graph.
+
+### Node Interaction
+
+1. Mouse move event triggers raycaster check.
+2. Raycaster computes intersections with the InstancedMesh.
+3. If a node is hit, Zustand store updates `hoveredNodeId`.
+4. On click, Zustand store updates `selectedNodeId` and pushes to `navigationHistory`.
+5. `LatticeScene` reads the store and triggers activation animations.
+6. `InfoPanel` reads the store and displays node details.
+
+---
+
+## Dependencies
+
+Lattice has a minimal dependency footprint:
+
+**Runtime dependencies**: Next.js, React, Three.js, Zustand, d3-force-3d, Anthropic SDK, Radix UI primitives.
+
+**Dev dependencies**: TypeScript, Tailwind CSS, ESLint.
+
+There are no ORMs, no CSS-in-JS libraries, no complex build tool plugins, no state management middleware. The stack is deliberately lean to keep the mental model simple and the bundle size manageable.

@@ -1,0 +1,29 @@
+{
+  "name": "@lattice/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server exposing the Lattice mental models graph (700 models, 2796 edges) as tools for AI agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "@lattice/mcp-server": "dist/index.js",
+    "lattice-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "license": "MIT"
+}

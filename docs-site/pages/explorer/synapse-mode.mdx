@@ -1,0 +1,85 @@
+# Synapse Mode
+
+Synapse Mode is Lattice's immersive exploration feature. Double-click any node to enter a close-up view that lets you fly between connected models, following the graph's dendrite pathways.
+
+---
+
+## Entering Synapse Mode
+
+**Double-click** any node to enter Synapse Mode. The camera performs an arc-fly animation -- sweeping in a curved trajectory from your current position to a close-up view of the target node. This is not a simple zoom; the camera traces an arc that gives you a sense of traveling through the graph.
+
+When Synapse Mode activates:
+
+1. The selected node fires with the full activation sequence.
+2. The camera arc-flies to position itself close to the node.
+3. Connected nodes become prominently visible, with bright particles traveling along their dendrite connections.
+4. Non-connected nodes fade into the background.
+5. The UI shifts to Synapse Mode controls.
+
+---
+
+## Navigating Between Nodes
+
+Once in Synapse Mode, you can fly between connected nodes. The connected models are visible as lit-up neighbors around your current focus node. Particles trace the dendrite paths between them.
+
+### Click a Connected Node
+
+Click any of the visible connected nodes to fly to it. The camera performs another arc-fly transition, sweeping through the space between the two nodes. This transition is smooth and takes approximately 800ms.
+
+When you arrive at the new node:
+
+1. It fires with the activation sequence.
+2. Its connections become visible, replacing the previous node's connections.
+3. The navigation history stack is updated (you can backtrack later).
+
+### Arrow Keys
+
+Use the arrow keys to cycle through connected nodes without flying to them. The highlighted connection is visually emphasized. Press `Enter` to fly to the highlighted node.
+
+### Backspace
+
+Press `Backspace` to fly back to the previous node in your navigation history. This lets you explore deeply along a chain of connections and then retrace your steps.
+
+---
+
+## What You See
+
+Synapse Mode provides a different perspective from the standard overview. When you are close to a node, you can observe:
+
+**The node's neighborhood**: See exactly which models are connected and how they are spatially distributed. Some nodes have connections that stretch across the graph to distant disciplines; others are tightly connected to nearby neighbors.
+
+**Particle flow**: At close range, the directional particles are much more visible. You can see them traveling from source to target along each edge, colored by connection type. This makes the flow of relationships tangible -- you are watching ideas connect.
+
+**Relative sizes**: At close zoom, the size differences between nodes are more apparent. Hub models (high-degree nodes) are noticeably larger than peripheral nodes with few connections.
+
+---
+
+## Exiting Synapse Mode
+
+Press `Escape` to exit Synapse Mode. The camera smoothly pulls back to the overview position, and the full graph returns to its standard resting state.
+
+You can also exit by clicking on empty space (the background), which deselects the current node and transitions back to the overview.
+
+---
+
+## Use Cases
+
+### Following a Thread
+
+Synapse Mode is ideal for following a chain of related ideas. Start at "Expected Value," fly to "Risk Aversion," then to "Loss Aversion," then to "Prospect Theory." Each hop shows you one connection; the full chain reveals how fundamental probability concepts led to a revolution in behavioral economics.
+
+### Discovering Bridges
+
+Some models serve as bridges between disciplines. In Synapse Mode, you can identify these by looking for nodes whose connections reach into multiple distant clusters. Fly to a bridge node and observe how it connects models from different fields -- these are the cross-discipline and structural kinship connections that make the graph more than a collection of separate clusters.
+
+### Studying Tensions
+
+Select a model and look at its tensioning connections (red-orange particles). Fly to one of the tensioning models to see its own connections. You may find that the model it tensions against is itself supported by a different set of complementary models. This kind of exploration reveals the argumentative structure of the model space -- which ideas reinforce each other, and which create productive conflict.
+
+---
+
+## Performance
+
+Synapse Mode does not load any additional data. It uses the same node, edge, and particle data as the overview mode, but adjusts camera position and visual emphasis. The transition between overview and Synapse Mode is purely a camera and rendering change, so it is instantaneous on any hardware that can run the overview.
+
+The arc-fly camera animation uses smooth interpolation (lerp) with easing. The arc height is proportional to the distance being traveled -- short hops produce gentle arcs, while long-distance flights (to a node on the other side of the graph) produce higher, more dramatic arcs.

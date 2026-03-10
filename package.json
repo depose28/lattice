@@ -1,7 +1,15 @@
 {
   "name": "lattice",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
+  "author": "Philipp Beer",
+  "description": "A 3D neural graph of 700 mental models — explore decision-making frameworks as an interactive brain",
+  "keywords": ["mental-models", "graph", "three.js", "visualization", "decision-making", "neural-network"],
+  "homepage": "https://github.com/philippbeer/lattice",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/philippbeer/lattice.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,15 +17,22 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "d3-force-3d": "^3.0.6",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "three": "^0.183.2",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.183.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

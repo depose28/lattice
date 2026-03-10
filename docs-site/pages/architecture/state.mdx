@@ -1,0 +1,220 @@
+# State Management
+
+Lattice uses a single Zustand store for all application state. This page documents the store structure, key actions, and the reasoning behind the state management architecture.
+
+---
+
+## Why Zustand
+
+Three.js applications have a specific state management challenge: the render loop reads state 60 times per second, and state updates can originate from UI interactions, animations, or external events (API responses). Traditional React state (useState, useContext) causes unnecessary re-renders in this environment.
+
+Zustand solves this in three ways:
+
+1. **No re-renders on read**: The Three.js animation loop reads state via `getState()` (a synchronous function call), not hooks. This means reading state does not subscribe the component to re-renders.
+2. **Selective subscriptions**: React components subscribe to specific state slices via selectors (`useGraphStore(s => s.selectedNodeId)`), so they only re-render when their slice changes.
+3. **External updates**: The animation loop can update state (e.g., activation levels) without causing React to re-render the entire component tree.
+
+Other state management options (Redux, Jotai, MobX) would work, but Zustand has the smallest API surface, requires no providers or wrappers, and is the most common choice in the Three.js React ecosystem.
+
+---
+
+## Store Structure
+
+The store lives in `store/graphStore.ts`. Its state can be grouped into several categories:
+
+### Graph Data
+
+```typescript
+nodes: NodeData[]           // All 700 nodes with positions
+edges: EdgeData[]           // All 2,796 edges
+nodeMap: Map<string, NodeData>  // Fast lookup by ID
+```
+
+Loaded once at startup from the JSON files. Never modified at runtime.
+
+### Selection State
+
+```typescript
+selectedNodeId: string | null    // Currently clicked node
+hoveredNodeId: string | null     // Currently hovered node
+navigationHistory: string[]      // Stack of previously selected nodes
+```
+
+`selectedNodeId` drives the InfoPanel, edge highlighting, and activation animation. `hoveredNodeId` drives the tooltip and hover highlight. `navigationHistory` enables the back button and Backspace key navigation.
+
+### Activation State
+
+```typescript
+activations: Map<string, ActivationState>  // Active firing nodes
+```
+
+Each entry tracks:
+- `startTime`: When the activation began (performance.now() timestamp).
+- `level`: Current activation level (0.0 to 1.0), computed from elapsed time.
+- `source`: What triggered the activation (click, oracle, idle, cascade).
+
+The animation loop reads this map every frame and uses it to compute node colors and bloom intensity.
+
+### Discipline State
+
+```typescript
+activeDisciplines: Set<string>   // Currently toggled disciplines
+highlightedEdgeType: string | null  // Spotlighted edge type
+```
+
+### Oracle State
+
+```typescript
+oracleResults: OracleResult | null   // Current Oracle response
+oracleLoading: boolean               // Whether a query is in progress
+oracleError: string | null           // Error message, if any
+```
+
+### Camera State
+
+```typescript
+flyToNodeId: string | null   // Node to fly camera toward
+synapseMode: boolean         // Whether Synapse Mode is active
+synapseFlyTo: string | null  // Next node in Synapse Mode navigation
+```
+
+---
+
+## Key Actions
+
+### selectNode(id: string)
+
+1. Sets `selectedNodeId` to the given ID.
+2. Pushes the ID onto `navigationHistory`.
+3. Triggers an activation for the node (adds entry to `activations`).
+4. Triggers secondary activations for connected nodes (lower intensity, slight delay).
+
+### navigateToNode(id: string)
+
+Like `selectNode`, but also sets `flyToNodeId` to trigger a camera transition. Used by the InfoPanel when clicking a connected model.
+
+### goBack()
+
+1. Pops the last entry from `navigationHistory`.
+2. Sets `selectedNodeId` to the new top of the stack (or null if empty).
+3. Sets `flyToNodeId` to trigger camera return.
+
+### fireNode(id: string)
+
+Triggers the activation sequence for a node without selecting it. Used by idle firing and cascade effects.
+
+### toggleDiscipline(name: string)
+
+Adds or removes a discipline from `activeDisciplines`. When added, all nodes in that discipline receive a visual overlay in their discipline color.
+
+### highlightEdgeType(type: string | null)
+
+Sets `highlightedEdgeType`. When set, only edges of that type are visually emphasized across the entire graph.
+
+### setOracleResults(results: OracleResult)
+
+Stores the Oracle response and triggers activations for all 15 recommended models.
+
+---
+
+## Reading State in the Render Loop
+
+The Three.js animation loop (in `LatticeScene.tsx`) reads state differently from React components. Instead of using the `useGraphStore` hook (which subscribes to re-renders), it calls:
+
+```typescript
+const state = useGraphStore.getState();
+```
+
+This returns a snapshot of the current state synchronously, without subscribing to changes. The animation loop calls this once per frame and uses the snapshot throughout the frame's computations:
+
+```typescript
+function animate() {
+  const state = useGraphStore.getState();
+
+  // Update activation levels
+  for (const [id, activation] of state.activations) {
+    const elapsed = performance.now() - activation.startTime;
+    const level = computeDecay(elapsed);
+    // ... update instance colors
+  }
+
+  // Update particles
+  // ... read edge data and particle positions
+
+  // Render
+  composer.render();
+  requestAnimationFrame(animate);
+}
+```
+
+Consolidating `getState()` into a single call per frame is a performance optimization. Each `getState()` call has trivial overhead individually, but calling it hundreds of times per frame (once per node, once per edge, etc.) adds up.
+
+---
+
+## Reading State in React Components
+
+UI components (InfoPanel, OraclePanel, SearchBar, etc.) use the standard Zustand hook with selectors:
+
+```typescript
+// Good: subscribes only to selectedNodeId changes
+const selectedId = useGraphStore(state => state.selectedNodeId);
+
+// Bad: subscribes to ALL state changes (causes excessive re-renders)
+const store = useGraphStore();
+```
+
+Selectors ensure that a component only re-renders when the specific state it depends on changes. The InfoPanel re-renders when `selectedNodeId` changes, but not when `hoveredNodeId` changes (the Tooltip handles that separately).
+
+---
+
+## No Prop Drilling
+
+In a typical Three.js React application, state flows through many layers: Canvas > Scene > Group > Mesh > Material. Passing callbacks and state through all these layers via props creates tight coupling and verbose code.
+
+Lattice avoids this entirely. Any component at any depth can read or update state by importing `useGraphStore`. The Zustand store acts as a global state bus.
+
+This is not the same as unstructured global state (the kind that causes bugs in large applications). The store has a defined shape, typed actions, and selectors that limit subscription scope. It is global in access but structured in design.
+
+---
+
+## State Persistence
+
+The Zustand store is ephemeral -- it resets on page reload. Only a few pieces of state persist across sessions:
+
+- **Force layout positions**: Stored in localStorage by the layout computation module (not by Zustand).
+- **API key**: Stored in localStorage by the Oracle hook.
+- **Onboarding dismissed**: Stored in localStorage by the OnboardingHints component.
+
+There is no Zustand persistence middleware. The store always starts fresh, and the graph data is re-fetched from static files on each page load.
+
+---
+
+## TypeScript Types
+
+All state types are defined in `lib/graph/types.ts`:
+
+```typescript
+interface NodeData {
+  id: string;
+  label: string;
+  discipline: string;
+  summary: string;
+  degree: number;
+  position: [number, number, number];
+}
+
+interface EdgeData {
+  source: string;
+  target: string;
+  type: string;
+  weight: number;
+}
+
+interface ActivationState {
+  startTime: number;
+  level: number;
+  source: 'click' | 'oracle' | 'idle' | 'cascade';
+}
+```
+
+The store itself is typed with a single interface that covers all state and actions, ensuring type safety across all consumers.

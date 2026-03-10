@@ -1,0 +1,67 @@
+# Lattice
+
+## A Neural Graph of 700 Mental Models
+
+Lattice is an interactive 3D visualization that maps 700 mental models as neurons in a living graph. Each node represents a mental model -- a decision-making framework, a cognitive bias, a thinking tool -- drawn from disciplines spanning probability theory to philosophy, game theory to behavioral economics.
+
+The models are connected by 2,796 edges that encode semantic relationships: complementary ideas, structural parallels, prerequisites, productive tensions, and inversions. The result is a navigable map of human thinking, rendered as a neural network that fires, decays, and responds to your exploration.
+
+---
+
+## Why This Exists
+
+Mental models are scattered. They live in books, courses, blog posts, and scattered notes. Most people know a handful deeply and have heard of dozens more, but the relationships between them -- the way "Bayesian Updating" connects to "Confirmation Bias," or how "Opportunity Cost" tensions against "Sunk Cost Fallacy" -- remain invisible.
+
+Lattice makes those relationships tangible. It presents the full landscape of 700 models not as a list or a tree, but as a graph with the density and connectivity of neural tissue. You can see which models are hubs (heavily connected to many others), which are bridges (linking disciplines that rarely overlap), and which form tight clusters within a field.
+
+More importantly, you can ask the Oracle. Describe a decision you are facing, and Lattice will identify the 15 most relevant models, classify them by role (supporting, challenging, process), and present a synthesis that weaves them into a coherent framework for thinking about your problem.
+
+---
+
+## Core Concepts
+
+### Neurons
+
+Each of the 700 mental models is rendered as a neuron -- a spherical node in 3D space. Neurons at rest are cool grey, nearly monochrome. When activated (by clicking, hovering, or through the Oracle), they fire with a white-hot spike that decays through yellow and amber before cooling back to grey. This mirrors the action potential of a biological neuron: an instant spike followed by a slow thermal decay.
+
+Hub neurons -- models with many connections -- appear physically larger. They are the high-connectivity nodes that bridge multiple disciplines and tie the graph together.
+
+### Dendrites
+
+The 2,796 connections between models are rendered as thin dendrite threads. They are deliberately subtle at rest, becoming visible when you interact with the nodes they connect. Directional particles travel along these dendrites from source to target, colored by connection type.
+
+### The Oracle
+
+The Oracle is Lattice's AI layer. It uses Claude to analyze your situation against all 700 models and surface the ones most relevant to your thinking. Results are grouped by role -- models that support your direction, models that challenge it, and models that inform your process -- creating a structured framework for better decisions.
+
+---
+
+## Quick Start
+
+**Explore the graph**: Open Lattice and move through the 3D space. Click any node to see its description and connections. Double-click to enter Synapse Mode for immersive exploration.
+
+**Search**: Press `Cmd+K` (or `/`) to open fuzzy search. Type any model name to pan directly to it.
+
+**Ask the Oracle**: Click the ORACLE tab, enter your Anthropic API key once, then describe any decision or situation. The Oracle will light up the most relevant models on the graph.
+
+**Filter by discipline**: Use the number keys `1-9` to toggle discipline overlays, or click disciplines in the bottom legend. Press `0` to show all.
+
+---
+
+## What Lattice Is Not
+
+Lattice is not a textbook or encyclopedia of mental models. The summaries are intentionally brief -- 1-2 sentences each -- because the value is in the connections, not the definitions. If you want to learn what "Prospect Theory" means in depth, read Kahneman. If you want to see how Prospect Theory connects to Loss Aversion, Endowment Effect, Reference Dependence, and 30 other models across 5 disciplines, use Lattice.
+
+Lattice is also not an AI chatbot. The Oracle does not generate new mental models or make decisions for you. It maps your situation onto the existing graph of 700 models and helps you see which frameworks apply. The thinking is yours. The Oracle just makes sure you are considering the right tools.
+
+---
+
+## Documentation Overview
+
+This documentation covers everything you need to explore, understand, and self-host Lattice:
+
+- **[The Graph](/the-graph/mental-models)** -- The data behind the 700 models, how connections work, and the embedding science that generated them.
+- **[Explorer](/explorer/navigation)** -- How to navigate the 3D graph, use keyboard shortcuts, filter by discipline, and enter Synapse Mode.
+- **[Oracle](/oracle/overview)** -- Setting up the AI-powered model recommender, understanding results, and using follow-up conversations.
+- **[Self-Hosting](/self-hosting/quickstart)** -- Clone, configure, and deploy your own Lattice instance.
+- **[Architecture](/architecture/overview)** -- Technical deep-dive into the rendering pipeline, state management, and file structure.

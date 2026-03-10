@@ -1,0 +1,224 @@
+# MCP Server
+
+Lattice exposes its full graph of 700 mental models as tools via the [Model Context Protocol](https://modelcontextprotocol.io/) (MCP). Any MCP-compatible AI agent -- Claude Desktop, Claude Code, Cursor, and others -- can query the graph directly from within a conversation. Search models, explore connections, filter by discipline, and run Oracle analyses, all without leaving your AI assistant.
+
+---
+
+## What This Enables
+
+The MCP server turns Lattice into a reasoning layer for AI assistants. Instead of manually browsing the graph in a browser, you can ask your AI assistant questions like:
+
+- "What mental models relate to pricing decisions?"
+- "Show me the tensions against Sunk Cost Fallacy."
+- "Run an Oracle analysis on whether we should expand into a new market."
+
+The assistant calls the appropriate Lattice tools behind the scenes and weaves the results into its response. The 700 models and 2,796 connections become part of the assistant's working knowledge for the duration of your conversation.
+
+---
+
+## Installation
+
+Install the MCP server package from npm:
+
+```bash
+npm install @lattice/mcp-server
+```
+
+The server bundles the full graph data (all 700 models and 2,796 edges) locally. No network calls are needed for browsing, searching, or filtering. Only the Oracle tool requires an internet connection to reach the Anthropic API.
+
+---
+
+## Setup
+
+### Claude Desktop
+
+Add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "lattice": {
+      "command": "npx",
+      "args": ["@lattice/mcp-server"]
+    }
+  }
+}
+```
+
+On macOS, this file is located at `~/Library/Application Support/Claude/claude_desktop_config.json`. On Windows, it is at `%APPDATA%\Claude\claude_desktop_config.json`. Create the file if it does not exist.
+
+Restart Claude Desktop after saving the configuration. You should see "lattice" appear in the MCP tools list when you start a new conversation.
+
+### Claude Code
+
+Register the server with a single command:
+
+```bash
+claude mcp add lattice npx @lattice/mcp-server
+```
+
+The server is available immediately in your next Claude Code session.
+
+### Other MCP Clients
+
+Any client that implements the MCP specification can connect to the Lattice server. Point it at the `@lattice/mcp-server` package using `npx` as the transport command. Consult your client's documentation for the exact configuration format.
+
+---
+
+## Available Tools
+
+The MCP server exposes seven tools. Each is described below with its parameters, behavior, and return format.
+
+### search_models
+
+Fuzzy search across all 700 models by name or description.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | yes | Search query to match against model names and descriptions |
+
+Returns the top 10 matches, each including the model name, discipline, summary, and degree (number of connections). Results are ranked by relevance to the query.
+
+**Example prompt**: "What models relate to decision-making under uncertainty?"
+
+---
+
+### get_model
+
+Get full details of a specific model including all its connections.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | yes | The unique identifier of the model |
+
+Returns the complete model record: name, discipline, full summary, degree, and a list of all connected models with their edge types and directions.
+
+---
+
+### get_connections
+
+List all connections for a model, sorted by strength.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | yes | The unique identifier of the model |
+
+Returns an array of connected models with the edge type and connection strength for each. Connections are sorted from strongest to weakest.
+
+---
+
+### list_disciplines
+
+List all 10 disciplines with model counts.
+
+This tool takes no parameters. It returns an array of discipline names, each with the number of models it contains. The 10 disciplines are: Probability, Investing, Behavioral Economics, Algorithms & Machine Learning, Economics, Financial Theory, Mathematics, Elementary Models, Philosophy, and Game Theory.
+
+---
+
+### get_models_by_discipline
+
+Get all models within a specific discipline.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `discipline` | string | yes | The discipline name (must match exactly) |
+
+Returns the full list of models belonging to the specified discipline, each with name, summary, and degree.
+
+---
+
+### find_related
+
+Find models connected by a specific relationship type.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | yes | The unique identifier of the source model |
+| `edge_type` | string | no | Filter by edge type (omit to return all) |
+
+When `edge_type` is provided, returns only connections of that type. When omitted, returns all connections grouped by type. The valid edge types are:
+
+- **complementary** -- Models that reinforce or extend each other.
+- **structural_kinship** -- Models that share structural similarities despite coming from different domains.
+- **tensioning** -- Models that create productive tension or contradiction.
+- **prerequisite** -- Models where understanding one is necessary to fully grasp the other.
+- **inversion** -- Models that represent opposite or inverted perspectives.
+- **cross_discipline_tfidf** -- Semantic similarity detected across disciplines via TF-IDF analysis.
+- **same_discipline_tfidf** -- Semantic similarity detected within the same discipline.
+- **same_chapter** -- Models that appear in the same chapter of a source text.
+
+---
+
+### oracle
+
+Run the full Oracle analysis on a decision or situation.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `situation` | string | yes | A description of the decision, problem, or situation to analyze |
+| `api_key` | string | yes | Your Anthropic API key |
+
+The Oracle uses Claude Sonnet to analyze your situation against all 700 models. It identifies the 15 most relevant models, classifies each by role, and returns a structured response containing:
+
+- A synthesis that weaves the relevant models into a coherent framework.
+- Results grouped into three categories: **Supporting** (models that reinforce your direction), **Challenging** (models that highlight risks or counterarguments), and **Process** (models that inform how to think about the problem).
+
+This is the only tool that requires an internet connection. It calls the Anthropic API using the provided key. The key is not stored or logged.
+
+---
+
+## Use Cases
+
+### Decision Support in Conversation
+
+Ask your AI assistant to help you think through a decision. It will automatically search for relevant models and incorporate them into its reasoning.
+
+> "Help me think through whether to raise prices on our SaaS product."
+
+The assistant calls `search_models` with queries related to pricing, elasticity, and customer behavior, then synthesizes the results into actionable advice grounded in established mental models.
+
+### Exploring Tensions and Contradictions
+
+Use `find_related` to surface productive tensions between models. This is useful when you want to stress-test an idea.
+
+> "What challenges the Sunk Cost Fallacy? Show me models that create tension with it."
+
+The assistant calls `find_related` with the Sunk Cost Fallacy ID and `edge_type: "tensioning"` to find models that offer opposing perspectives.
+
+### Discipline Deep Dives
+
+Use `list_disciplines` and `get_models_by_discipline` to explore an entire field systematically.
+
+> "Give me an overview of all Game Theory models in Lattice."
+
+### Full Oracle Analysis
+
+For complex decisions, invoke the Oracle directly from your conversation.
+
+> "Run an Oracle analysis on whether we should pivot from B2B to B2C."
+
+The assistant calls the `oracle` tool, and the response includes a structured breakdown with supporting, challenging, and process models -- all rendered inline in the conversation.
+
+### Custom Workflows
+
+Because MCP tools are composable, you can chain them in multi-step workflows. For example, search for models related to a topic, get the full details on the most relevant ones, then explore their connections to discover adjacent frameworks you had not considered.
+
+---
+
+## Data
+
+The MCP server bundles the complete Lattice dataset:
+
+- **700 mental models** spanning 10 disciplines, from Probability to Philosophy.
+- **2,796 edges** encoding 8 relationship types between models.
+- All data is included in the npm package. No external data fetching is required for any tool except `oracle`.
+
+The bundled data is identical to what the Lattice web application uses. Model IDs, names, and relationships are consistent between the MCP server and the browser-based graph.
+
+---
+
+## Next Steps
+
+- [Oracle Overview](/oracle/overview) -- Learn how the Oracle analysis works and how results are structured.
+- [The Graph: Connections](/the-graph/connections) -- Understand the 8 edge types and how they were generated.
+- [Architecture Overview](/architecture/overview) -- Technical details on the data pipeline and graph computation.

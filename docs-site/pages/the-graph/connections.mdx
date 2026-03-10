@@ -1,0 +1,134 @@
+# Connections
+
+The 2,796 edges in Lattice represent semantic relationships between mental models. Each edge has a type that describes the nature of the connection. Understanding these types is key to reading the graph effectively.
+
+---
+
+## Edge Types
+
+There are six primary connection types, plus two internal types used for within-discipline links. Each type is color-coded when particles travel along the edge.
+
+### Complementary (809 edges)
+
+Two models that strengthen each other when combined. Using both together produces better thinking than using either alone.
+
+**Example**: "Expected Value" and "Probability Weighting" are complementary. Expected value gives you the mathematical framework; probability weighting explains how humans systematically distort it. Understanding both gives you a complete picture of decision-making under uncertainty.
+
+**Particle color**: Green (`#5DBF6E`)
+
+### Structural Kinship (454 edges)
+
+Models from different domains that share a similar underlying structure. They may use different vocabulary and apply to different problems, but the core mechanism is the same.
+
+**Example**: "Network Effects" and "Critical Mass" come from different fields (economics and physics/sociology), but both describe the same threshold phenomenon -- a system that changes behavior once enough participants are involved.
+
+**Particle color**: Warm gold (`#D4A843`)
+
+### Cross-Discipline (309 edges)
+
+Models that share core concepts across different fields. Unlike structural kinship (which is about similar mechanisms), cross-discipline connections indicate shared intellectual DNA -- the same ideas appearing in different traditions.
+
+**Particle color**: Bright white (`#E8E8E8`)
+
+### Prerequisite (197 edges)
+
+One model builds understanding for another. You need to grasp model A before model B makes full sense.
+
+**Example**: Understanding "Conditional Probability" is a prerequisite for "Bayes' Theorem." Without the concept of conditioning on evidence, the Bayesian update formula is just symbol manipulation.
+
+**Particle color**: Cyan (`#2EC4B6`)
+
+### Tensioning (183 edges)
+
+Models that create productive friction. They represent opposing perspectives, trade-offs, or inherent tensions in thinking. Neither model is "wrong" -- the tension between them is where good judgment lives.
+
+**Example**: "First-Mover Advantage" and "Fast Follower" tension against each other. One argues for being first; the other argues for letting someone else make mistakes first. The right answer depends on context, and understanding both models helps you evaluate that context.
+
+**Particle color**: Red-orange (`#E8614A`)
+
+### Inversion (59 edges)
+
+Direct opposites. Where tensioning models create productive friction, inversions are clean conceptual mirrors.
+
+**Example**: "Optimism Bias" and "Pessimism Bias" are inversions. They describe the same cognitive mechanism pointed in opposite directions.
+
+**Particle color**: Purple (`#9B5DE5`)
+
+### Same Discipline (695 edges)
+
+Models within the same field that are related. These are the most common short-range connections and form the dense clusters you see within each discipline's territory on the graph.
+
+**Particle color**: Dim cool grey (`#1E2E3A`) -- deliberately subtle
+
+### Same Chapter (cross-chapter internal)
+
+A secondary internal type for models that share a chapter or subsection in the source material.
+
+**Particle color**: Medium grey (`#445566`)
+
+---
+
+## Edge Distribution
+
+The edge types follow a power-law-like distribution:
+
+| Type | Count | Percentage |
+|---|---|---|
+| Complementary | 809 | 28.9% |
+| Same Discipline | 695 | 24.9% |
+| Structural Kinship | 454 | 16.2% |
+| Cross-Discipline | 309 | 11.1% |
+| Prerequisite | 197 | 7.0% |
+| Tensioning | 183 | 6.5% |
+| Inversion | 59 | 2.1% |
+| Same Chapter | ~90 | 3.2% |
+
+Complementary edges are the most common because many models genuinely do work better in combination. Inversions are the rarest because true conceptual opposites are uncommon -- most models that seem opposite actually represent a tension (two valid perspectives) rather than a clean mirror.
+
+---
+
+## Reading Connections on the Graph
+
+When you select a node, its connections become visible in the InfoPanel on the right side. Connections are listed grouped by type, so you can quickly scan which models complement your selection, which ones create tension with it, and which are prerequisites.
+
+On the graph itself, connections are rendered as thin dendrite threads. At rest, they are very dark and subtle (`#111E28`). When either endpoint is active, the edge brightens and directional particles travel along it from source to target.
+
+### Edge Type Spotlight
+
+Clicking a connection type in the bottom legend highlights only edges of that type across the entire graph. This lets you see, for example, all 183 tensioning connections at once -- revealing the global structure of productive conflicts across the full model space.
+
+This is a spotlight, not a toggle. Clicking the same type again removes the highlight. Only one type can be spotlighted at a time.
+
+---
+
+## Data Format
+
+Edge data is stored in `public/data/edges.json` as a static JSON file. Each entry contains:
+
+```json
+{
+  "source": "expected-value",
+  "target": "probability-weighting",
+  "type": "complementary",
+  "weight": 0.87
+}
+```
+
+The `weight` field represents the strength of the connection (0 to 1), derived from the cosine similarity of the two models' embeddings. Higher weight means stronger semantic similarity. Edge rendering uses weight to modulate particle speed and density -- stronger connections have faster, more frequent particles.
+
+Like `nodes.json`, this file is read-only and should not be modified directly.
+
+---
+
+## Why These Types?
+
+The six semantic types were chosen to capture meaningfully different kinds of intellectual relationships:
+
+- **Complementary** answers: "What should I use alongside this?"
+- **Structural Kinship** answers: "What thinks the same way in a different domain?"
+- **Cross-Discipline** answers: "Where else does this idea appear?"
+- **Prerequisite** answers: "What should I understand first?"
+- **Tensioning** answers: "What pushes back against this?"
+- **Inversion** answers: "What is the direct opposite?"
+
+Together, they give you a multi-dimensional view of how each model relates to the broader landscape of thinking tools.

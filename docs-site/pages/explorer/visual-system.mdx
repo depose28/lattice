@@ -1,0 +1,170 @@
+# Visual System
+
+The visual design of Lattice is modeled on neuroscience imaging, not AI marketing aesthetics. Every element -- from node color to bloom parameters to particle behavior -- is specified precisely. This page documents the full visual system.
+
+---
+
+## Design Philosophy
+
+Three principles guide every visual decision in Lattice:
+
+1. **Monochrome at rest.** The resting graph is nearly black-and-white. Color appears only during activation or filtering. This ensures that when something fires, you notice it.
+2. **Clinical precision.** Bloom is tight, not diffuse. Lines are thin, not glowing. Typography is monospaced for labels. The aesthetic is a research instrument, not a marketing demo.
+3. **Biologically accurate timing.** Activation follows the shape of a neural action potential: an instant spike (50ms) followed by a slow thermal decay (2500ms). The spike is the event. The decay is the memory of it.
+
+---
+
+## Background
+
+The scene background is `#070B0F` -- a cool near-black with a subtle blue-black tint. This is not pure black (`#000000`), which would feel harsh, nor warm black, which would feel organic. The cool tint establishes the clinical tone.
+
+A very faint film grain overlay (intensity `0.006`) adds texture and prevents the background from looking like a flat void. The grain is barely perceptible -- you might not notice it consciously, but you would notice its absence.
+
+---
+
+## Neurons (Nodes)
+
+### Rendering
+
+All 700 nodes are rendered as a single `THREE.InstancedMesh`. This means one draw call for the entire node set, regardless of how many nodes are visible. Each node is a sphere with custom GLSL shaders that handle color, activation effects, and rim lighting.
+
+### Resting Appearance
+
+At rest, every node is `#3A4F5E` -- a cool, desaturated blue-grey. All nodes look the same except for size. This monochrome resting state is deliberate: it prevents the graph from looking like a colorful mess and ensures that activation events create visual contrast.
+
+### Size
+
+Node radius scales logarithmically with degree (number of connections):
+
+```
+radius = 0.35 * (1 + log(degree + 1) * 0.35)
+```
+
+This produces a visible but not overwhelming size difference between hub nodes (many connections) and peripheral nodes (few connections). Hub nodes are roughly 2-3 times the diameter of low-degree nodes.
+
+### Hover
+
+When the cursor passes over a node, it brightens to `#8CB4CC` -- a noticeable but not dramatic shift. This provides clear feedback about which node you are targeting without disrupting the overall graph aesthetic.
+
+### Breathing
+
+Hub nodes (above a certain degree threshold) have a subtle pulsing animation. The node's brightness and scale oscillate slowly, giving the impression of a living, breathing entity. The amplitude is very small -- just enough to catch peripheral vision and draw attention to important nodes.
+
+---
+
+## Activation Sequence
+
+When a node fires (from a click, search result, Oracle result, or idle firing), it follows a precise thermal decay sequence modeled on a neural action potential.
+
+### The Spike (0-50ms)
+
+The node instantly transitions to pure white (`#FFFFFF`). This is not a fade-in; it is a hard cut. The spike duration is 50ms -- fast enough to feel instantaneous but long enough to register visually.
+
+During the spike, the node also emits bloom. Because the bloom threshold is set to 0.75, only the white-hot spike and the initial yellow phase produce visible bloom. This means glow appears only on freshly fired nodes, never on resting nodes.
+
+### Thermal Decay (50-2500ms)
+
+After the spike, the node decays through a thermal color sequence:
+
+| Time | Color | Name | Hex |
+|---|---|---|---|
+| 0ms | White | Peak | `#FFFFFF` |
+| 150ms | Yellow | Hot | `#FFE566` |
+| 500ms | Amber | Warm | `#E8A030` |
+| 1200ms | Deep amber | Cool | `#C47A20` |
+| 2500ms | Grey | Rest | `#3A4F5E` |
+
+The decay is non-linear -- it spends more time in the warm amber range than in the yellow range, creating a natural-looking cooldown.
+
+### Discipline Color Window
+
+At the peak of activation (the first 300ms), the node also shows its discipline color. This means a firing Probability node briefly flashes blue, a Game Theory node flashes red, and so on. After 300ms, the discipline color fades and the standard thermal decay takes over.
+
+This window is short by design. Discipline color is information, not decoration. It appears long enough to be noticed and short enough to not linger.
+
+---
+
+## Dendrites (Edges)
+
+### Rendering
+
+Edges are rendered as `THREE.LineSegments` -- the thinnest possible line representation. They are not tubes, not ribbons, not glowing beams. They are precise, hair-thin threads connecting nodes. This is what "dendrites" look like in neuroscience imaging: thin, numerous, and structural.
+
+### Resting Appearance
+
+At rest, edges are `#111E28` -- so dark they are barely visible against the background. You can see them if you look for them, but they do not dominate the visual field. The graph at rest is a field of grey dots, not a web of lines.
+
+### Active Edges
+
+When either endpoint of an edge is selected or activated, the edge brightens. The brightness increase is proportional to the activation level of the connected nodes. This makes the local structure visible around a selected node without illuminating the entire graph.
+
+### Width
+
+Edge width is constant at rendering level (`0.3` base width). Stronger connections (higher weight) do not appear thicker. The visual differentiation of edge strength comes from particle behavior, not line thickness.
+
+---
+
+## Particles
+
+### Rendering
+
+Edge particles are rendered as `THREE.Points` -- a separate rendering system from the edges themselves. Each particle is a small bright point that travels along an edge from source to target.
+
+### Direction
+
+Particles are directional. They travel from the source node to the target node, not back and forth. This encodes the relationship direction and creates a visible flow pattern when a cluster of edges is active.
+
+### Speed and Density
+
+Particle speed and density scale with edge weight. Stronger connections (higher cosine similarity) have faster particles that travel more frequently. Weak connections have slower, sparser particles.
+
+### Color
+
+Each particle is colored by the edge type it travels along:
+
+| Edge Type | Particle Color | Hex |
+|---|---|---|
+| Cross-discipline | Bright white | `#E8E8E8` |
+| Structural Kinship | Warm gold | `#D4A843` |
+| Complementary | Green | `#5DBF6E` |
+| Tensioning | Red-orange | `#E8614A` |
+| Inversion | Purple | `#9B5DE5` |
+| Prerequisite | Cyan | `#2EC4B6` |
+| Same Chapter | Medium grey | `#445566` |
+| Same Discipline | Near-invisible | `#1E2E3A` |
+
+The color coding makes edge types distinguishable at a glance, especially when multiple types are active simultaneously.
+
+---
+
+## Post-Processing
+
+### Bloom
+
+Bloom is applied as a post-processing effect with tight, clinical parameters:
+
+- **Strength**: 0.4
+- **Threshold**: 0.75
+- **Radius**: 0.15
+
+The high threshold means only very bright elements produce bloom -- specifically, only nodes at the peak of their activation sequence (white or bright yellow). Resting nodes, edges, and particles do not bloom. The low radius keeps the bloom tight around the source, preventing the diffuse glow that characterizes AI marketing visuals.
+
+### Film Grain
+
+A very subtle film grain overlay with intensity `0.006` adds imperceptible texture to the scene. This prevents the digital "too clean" look without being noticeable as a deliberate effect.
+
+---
+
+## Typography
+
+**Node labels**: IBM Plex Mono. Monospaced type reinforces the clinical, instrument-like character of the visualization.
+
+**UI panels**: Inter. A clean, readable sans-serif for the InfoPanel, Oracle panel, and other interface elements.
+
+Labels are not shown at all zoom levels. At far zoom, nodes are unlabeled dots. Labels appear as you zoom closer, scaling with camera distance. This prevents the graph from becoming a wall of text at the overview level.
+
+---
+
+## Color Constants
+
+Every color in the visual system is defined in a single file: `lib/constants.ts`. This is the single source of truth. No colors are defined inline in components, shaders, or styles. If you want to modify any color in Lattice, change it in `constants.ts` and it propagates everywhere.

@@ -1,0 +1,108 @@
+# Disciplines
+
+Lattice organizes its 700 mental models into 10 disciplines. This page covers the discipline system, how filtering works, the color assignments, and how discipline overlays interact with the graph.
+
+---
+
+## The Discipline Color System
+
+Each discipline has a unique color, defined in `lib/constants.ts`. These colors appear in three contexts:
+
+1. **Activation peak**: When a node fires, the discipline color appears for a brief 300ms window at the top of the activation curve, before the node decays through the standard thermal sequence (yellow, amber, grey).
+2. **Discipline filtering**: When you toggle a discipline on, all nodes in that discipline light up in their discipline color.
+3. **Legend indicators**: The bottom legend shows each discipline with its color swatch.
+
+### Color Assignments
+
+| Discipline | Color | Hex |
+|---|---|---|
+| Probability | Blue | `#4A90D9` |
+| Investing | Green | `#5DBF6E` |
+| Behavioral Economics | Amber | `#D4A843` |
+| Algorithms & Machine Learning | Violet | `#9B5DE5` |
+| Economics | Coral | `#E8614A` |
+| Financial Theory | Teal | `#2EC4B6` |
+| Mathematics | Silver | `#A8B8C8` |
+| Elementary Models | Orange | `#F4892A` |
+| Philosophy | Pale grey | `#C0C8D0` |
+| Game Theory | Red | `#E63946` |
+
+These colors are carefully chosen for two properties: they must be distinguishable from each other at a glance, and they must look good against the dark background (`#070B0F`). The color palette avoids pure primary colors in favor of muted, slightly desaturated tones that feel clinical rather than decorative.
+
+---
+
+## Resting State vs. Active Discipline
+
+At rest, all 700 nodes are the same cool grey (`#3A4F5E`). You cannot tell which discipline a node belongs to just by looking at the graph. This is a deliberate design choice -- the resting state is near-monochrome.
+
+When you activate a discipline, the graph transforms. Nodes belonging to that discipline light up in their discipline color. All other nodes remain grey (or dim further). This creates an fMRI-like effect: you can see exactly where in the graph's 3D space a particular discipline lives.
+
+Discipline activation also affects particles. When a discipline is active, particles traveling along edges connected to discipline nodes become brighter and take on the discipline's color, making the connection patterns within that field visible.
+
+---
+
+## How to Toggle Disciplines
+
+### Bottom Legend
+
+The discipline legend appears at the bottom of the screen. Each discipline is listed with its color swatch and name. Click any discipline to toggle its overlay on. Click again to toggle off.
+
+### Number Keys
+
+Press keys `1` through `9` to toggle disciplines in order:
+
+- `1` = Probability
+- `2` = Investing
+- `3` = Behavioral Economics
+- `4` = Algorithms & ML
+- `5` = Economics
+- `6` = Financial Theory
+- `7` = Mathematics
+- `8` = Elementary Models
+- `9` = Philosophy
+
+Press `0` to reset and show all disciplines (return to the default grey resting state).
+
+Game Theory does not have a single-key shortcut due to keyboard layout constraints. Use the legend to toggle it.
+
+### Multiple Disciplines
+
+You can have multiple disciplines active simultaneously. When two or more disciplines are toggled on, their nodes light up in their respective colors, and you can see how the disciplines overlap and interweave in 3D space.
+
+This is useful for answering spatial questions like: "Are economics and game theory models clustered together?" (Often yes -- they share many connections.) "Are probability and philosophy models near each other?" (Sometimes -- Bayesian epistemology bridges them.)
+
+---
+
+## Discipline Geography
+
+Because the force-directed layout positions connected nodes near each other, disciplines form recognizable (though not perfectly distinct) regions in the graph.
+
+**Tight clusters**: Some disciplines form dense, compact clusters. Game Theory models, for example, tend to cluster tightly because they share many internal connections (same-discipline edges) and use a common vocabulary.
+
+**Spread-out disciplines**: Elementary Models and Mathematics are more distributed, because their concepts (feedback loops, exponential growth, power laws) appear as building blocks across many other disciplines. They do not form a single cluster; instead, they are scattered throughout the graph, bridging other discipline clusters.
+
+**Overlapping zones**: Behavioral Economics and Probability share significant territory, as many cognitive biases are defined in terms of probabilistic reasoning errors. Investing and Financial Theory similarly overlap.
+
+Using the discipline toggle system, you can visually identify these patterns. Toggle two disciplines on simultaneously and observe where their colored nodes intermingle.
+
+---
+
+## Discipline and Edge Types
+
+Discipline filtering interacts with the edge type spotlight system. When a discipline is active:
+
+- Edges connecting two nodes of the active discipline are emphasized.
+- Cross-discipline edges (connecting the active discipline to other fields) become more visible.
+- Edges between two non-active disciplines remain dim.
+
+If you combine discipline filtering with edge type spotlight (for example, toggling on "Behavioral Economics" and spotlighting "Tensioning" edges), you can see specifically which behavioral economics models create productive tension with models in other fields. This kind of compound filtering is one of Lattice's most powerful analytical tools.
+
+---
+
+## Boot Sequence
+
+When Lattice first loads, it performs a "boot sequence" animation. Disciplines light up one by one in rapid succession, as if the brain is powering on. Each discipline flashes its color across its nodes for a brief moment before moving to the next.
+
+This serves two purposes: it gives visual feedback during the initial load (while the force layout is being retrieved or computed), and it previews the discipline color system so users know what to expect when they toggle disciplines later.
+
+After the boot sequence completes, all nodes return to their resting grey state, and the graph is ready for interaction.

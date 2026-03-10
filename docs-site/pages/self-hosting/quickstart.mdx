@@ -1,0 +1,142 @@
+# Quickstart
+
+Get Lattice running locally in under two minutes. No database, no external services (except optionally Anthropic for the Oracle), no complex configuration.
+
+---
+
+## Prerequisites
+
+You need the following installed on your machine:
+
+- **Node.js** 18 or later (check with `node --version`)
+- **npm** 9 or later (ships with Node.js)
+- **Git** (to clone the repository)
+
+A modern browser with WebGL support is required to view the graph. Chrome, Firefox, Safari, and Edge all work. WebGL 2.0 support is recommended for full shader functionality.
+
+---
+
+## Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/your-org/lattice.git
+cd lattice
+```
+
+---
+
+## Step 2: Install Dependencies
+
+```bash
+npm install
+```
+
+This installs Next.js, Three.js, Zustand, Tailwind, and all other dependencies. There are no native modules or system-level dependencies to worry about.
+
+---
+
+## Step 3: Run the Development Server
+
+```bash
+npm run dev
+```
+
+The application starts on `http://localhost:3000`. Open this URL in your browser.
+
+---
+
+## What You Should See
+
+On first load, Lattice performs a boot sequence: disciplines light up one by one across the graph, and then the full 3D visualization appears. All 700 nodes are rendered as grey spheres in 3D space, with thin dendrite connections between them.
+
+The first load takes a few seconds longer than subsequent visits because the force-directed layout must be computed. This layout is cached in localStorage, so future visits load instantly.
+
+### Verify It Works
+
+Try these interactions to confirm everything is functioning:
+
+1. **Hover** over a node -- you should see a tooltip with the model name and discipline.
+2. **Click** a node -- the InfoPanel should open on the right with the model description.
+3. **Press Cmd+K** (or `/`) -- the search modal should appear.
+4. **Type a model name** in search -- results should appear as you type.
+5. **Double-click** a node -- you should enter Synapse Mode with the camera flying in close.
+
+---
+
+## Optional: Enable the Oracle
+
+The Oracle requires an Anthropic API key. You have two options:
+
+### Option A: Per-User Keys (Default)
+
+No configuration needed. When a user enters Oracle Mode, they are prompted to enter their own API key. The key is stored in their browser's localStorage.
+
+### Option B: Server-Side Key
+
+Create a `.env.local` file in the project root:
+
+```bash
+echo "ANTHROPIC_API_KEY=sk-ant-your-key-here" > .env.local
+```
+
+Restart the dev server. The Oracle will now work for all users without requiring them to enter a key.
+
+---
+
+## Project Structure
+
+After cloning, the key directories are:
+
+```
+lattice/
+  app/              # Next.js app router pages and API routes
+  components/       # React components (graph/ and ui/)
+  lib/              # Constants, graph utilities, Three.js helpers
+  store/            # Zustand state management
+  public/data/      # Static JSON data (nodes.json, edges.json)
+  docs/             # Project documentation (markdown)
+```
+
+The data files in `public/data/` are static JSON included in the repository. They contain the 700 mental models and 2,796 connections. These files are read-only and should not be modified.
+
+---
+
+## Common Issues
+
+### Blank Screen / No Graph
+
+- Check the browser console for WebGL errors. Your browser or GPU may not support WebGL 2.0.
+- Try a different browser (Chrome is the most reliable for WebGL).
+- Check that `npm install` completed without errors.
+
+### Layout Takes Too Long
+
+The force-directed layout computes 700 nodes with ~2,800 edges. On most machines this takes 2-5 seconds. On very slow machines, it may take up to 15 seconds. The result is cached in localStorage, so this only happens once.
+
+If you want to clear the cached layout and recompute: open browser DevTools, go to Application > Local Storage, and delete the layout cache entry.
+
+### Port 3000 In Use
+
+If another application is using port 3000:
+
+```bash
+npm run dev -- -p 3001
+```
+
+### Node.js Version Too Old
+
+Lattice requires Node.js 18+. If you see syntax errors or module resolution failures, check your Node version:
+
+```bash
+node --version
+```
+
+Use [nvm](https://github.com/nvm-sh/nvm) to install a newer version if needed.
+
+---
+
+## Next Steps
+
+- [Configuration](/self-hosting/configuration) -- Environment variables and customization options.
+- [Deployment](/self-hosting/deployment) -- Deploy to Vercel or other platforms.
+- [Architecture Overview](/architecture/overview) -- Understand the codebase structure.

@@ -1,0 +1,109 @@
+# The 700 Mental Models
+
+Lattice contains 700 mental models -- decision-making frameworks, cognitive biases, mathematical principles, and thinking tools drawn from 10 distinct disciplines. This page explains what the models are, how they are organized, and what the data looks like.
+
+---
+
+## What Is a Mental Model?
+
+A mental model is a simplified representation of how something works. It is a thinking tool you can apply to decisions, problems, and situations to reason more clearly. Some are formal (Bayes' Theorem, Nash Equilibrium), some are heuristic (Occam's Razor, Pareto Principle), and some describe cognitive patterns (Anchoring Bias, Dunning-Kruger Effect).
+
+The 700 models in Lattice span a wide range of abstraction. Some are foundational concepts taught in undergraduate courses. Others are specialized frameworks used by professional investors, game theorists, or behavioral researchers. Together, they form a comprehensive map of structured thinking.
+
+---
+
+## The 10 Disciplines
+
+Every model belongs to exactly one discipline. The disciplines and their approximate model counts are:
+
+| Discipline | Focus Area |
+|---|---|
+| **Probability** | Statistical reasoning, distributions, Bayesian inference, expected value |
+| **Investing** | Valuation, portfolio theory, market behavior, risk management |
+| **Behavioral Economics** | Cognitive biases, heuristics, decision-making under uncertainty |
+| **Algorithms & Machine Learning** | Computational thinking, optimization, learning theory |
+| **Economics** | Market structures, incentives, supply/demand, policy |
+| **Financial Theory** | Asset pricing, capital structure, derivatives, efficient markets |
+| **Mathematics** | Pure math concepts, statistics, calculus, linear algebra |
+| **Elementary Models** | Foundational frameworks that appear across disciplines |
+| **Philosophy** | Epistemology, logic, ethics, reasoning frameworks |
+| **Game Theory** | Strategic interaction, equilibria, mechanism design |
+
+These disciplines are not arbitrary categories. They reflect genuine intellectual traditions with distinct vocabularies, assumptions, and methods. The connections between models across disciplines are where some of the most interesting insights emerge.
+
+---
+
+## Model Properties
+
+Each model in the dataset has the following properties:
+
+### Name
+
+The canonical name of the mental model. Examples: "Expected Value," "Survivorship Bias," "Dunning-Kruger Effect," "Nash Equilibrium."
+
+### Discipline
+
+One of the 10 disciplines listed above. This determines the model's color when discipline overlays are active.
+
+### Summary
+
+A brief description of the model, typically 1-2 sentences. These summaries are intentionally concise -- they provide enough context to recognize the model and understand its core idea, but they are not comprehensive explanations.
+
+All summaries in the source data are capped at 300 characters. In practice, 692 of the 700 summaries end mid-sentence at the character limit. Lattice's display layer cleans these up by truncating at the last complete sentence.
+
+### Degree
+
+The number of connections (edges) this model has to other models. Degree ranges from a handful of connections for niche models to dozens for highly connected hub models. In the graph visualization, node size scales logarithmically with degree -- hub models appear visibly larger.
+
+---
+
+## Hub Models
+
+Some models are dramatically more connected than others. These hub models tend to be foundational concepts that apply across multiple disciplines. A model like "Expected Value" connects to probability models, investing models, behavioral economics models, and game theory models. Its high degree makes it a central node in the graph, physically larger and positioned at the intersection of multiple clusters.
+
+Hub models serve as orientation points when navigating the graph. If you are exploring an unfamiliar discipline, finding a hub model within it gives you a node with many outgoing connections to explore.
+
+---
+
+## Data Format
+
+The model data is stored in `public/data/nodes.json` as a static JSON file. Each entry is an object with the following shape:
+
+```json
+{
+  "id": "expected-value",
+  "label": "Expected Value",
+  "discipline": "Probability",
+  "summary": "The probability-weighted average of all possible outcomes...",
+  "degree": 42
+}
+```
+
+This file is read-only and ships with the repository. It is loaded once at application startup and cached. No database is required.
+
+---
+
+## How Models Were Selected
+
+The 700 models were curated from a broad survey of decision-making literature, spanning classic texts in probability theory, behavioral economics, investing, game theory, and related fields. The selection criteria prioritized:
+
+1. **Practical applicability** -- Models that can be applied to real decisions, not purely theoretical constructs.
+2. **Cross-disciplinary relevance** -- Models that appear in or connect to multiple fields.
+3. **Distinctness** -- Each model represents a meaningfully different idea, avoiding redundant entries that say the same thing with different names.
+4. **Coverage** -- The set aims to cover the major thinking tools across all 10 disciplines without gaps.
+
+The result is a collection that ranges from universally known concepts (Opportunity Cost, Confirmation Bias) to more specialized frameworks (Kelly Criterion, Goodhart's Law, Schelling Points).
+
+---
+
+## Working With the Data
+
+If you are self-hosting Lattice, the model data lives at `public/data/nodes.json`. This file is part of the repository and should not be modified -- doing so may break edge references, since edges reference models by ID.
+
+If you want to extend Lattice with your own models, you would need to:
+
+1. Add new entries to `nodes.json` with unique IDs
+2. Generate new edges for those models (see [Embeddings](/the-graph/embeddings) for the methodology)
+3. Clear the localStorage layout cache so the force simulation recomputes positions
+
+This is an advanced operation. The existing 700-model dataset is designed to be comprehensive and self-contained.

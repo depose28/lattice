@@ -1,0 +1,191 @@
+# Rendering Pipeline
+
+Lattice renders 700 nodes, 2,796 edges, and thousands of particles at 60fps using Three.js. This page explains the rendering architecture, the specific Three.js techniques used, and why each choice was made.
+
+---
+
+## Scene Composition
+
+The Three.js scene consists of four primary layers:
+
+1. **Neuron nodes** -- `THREE.InstancedMesh` (one draw call for all 700 spheres)
+2. **Dendrite edges** -- `THREE.LineSegments` (one draw call for all edge lines)
+3. **Edge particles** -- `THREE.Points` (one draw call for all particles)
+4. **Post-processing** -- Bloom + film grain via effect composer
+
+Each layer is implemented as a separate React component under `components/graph/`. The scene is orchestrated by `LatticeScene.tsx`, which handles camera setup, animation loop, and event coordination.
+
+---
+
+## Neuron Nodes (NeuronNodes.tsx)
+
+### Why InstancedMesh
+
+Drawing 700 individual meshes would require 700 separate draw calls per frame. With `THREE.InstancedMesh`, all 700 spheres are drawn in a single call. The GPU receives one geometry template (a sphere) and a list of 700 transformation matrices (position, scale, rotation), plus per-instance attributes for color and activation state.
+
+This is the single most important performance decision in Lattice. Without instancing, the graph would not run at 60fps on most hardware.
+
+### Instance Attributes
+
+Each instance (node) has the following per-instance attributes:
+
+- **Matrix**: Position (from force layout) and scale (from degree-based sizing).
+- **Color**: A `THREE.Color` that changes based on state (rest, hover, activation phase, discipline overlay).
+- **Activation level**: A float (0.0 to 1.0) that drives the shader's activation effects. 0.0 is resting, 1.0 is peak spike.
+
+These attributes are updated every frame during animation and written to the instance buffers. Three.js handles uploading the updated buffers to the GPU.
+
+### Custom Shaders
+
+The neuron spheres use custom GLSL shaders rather than Three.js built-in materials. The shaders implement:
+
+**Vertex shader** (`neuronVert.glsl`):
+- Reads the instance transformation matrix.
+- Passes the activation level and color to the fragment shader.
+- Applies the standard projection pipeline.
+
+**Fragment shader** (`neuronFrag.glsl`):
+- Implements the thermal decay color mapping (activation level to thermal color).
+- Applies rim lighting for depth perception.
+- Implements the sigmoid activation function for smooth color transitions.
+- Handles the discipline color window (showing discipline color at peak activation for 300ms).
+
+The function `thermalDecay()` in the fragment shader maps the activation float to the correct color in the thermal sequence:
+
+```
+activation > 0.9  →  ACTIVATION_PEAK (#FFFFFF)
+activation > 0.7  →  ACTIVATION_HOT (#FFE566)
+activation > 0.4  →  ACTIVATION_WARM (#E8A030)
+activation > 0.2  →  ACTIVATION_COOL (#C47A20)
+activation ≤ 0.2  →  NEURON_REST (#3A4F5E)
+```
+
+The sigmoid function ensures smooth interpolation between these color stops rather than hard cuts.
+
+---
+
+## Dendrite Edges (DendriteEdges.tsx)
+
+### Why LineSegments
+
+Edges could be rendered as tubes (cylindrical meshes), ribbons (flat quads), or lines. Lattice uses `THREE.LineSegments` -- the thinnest possible representation.
+
+Reasons:
+- **Performance**: LineSegments are extremely cheap to render. One draw call handles all 2,796 edges.
+- **Aesthetics**: Dendrites in neuroscience imaging are thin threads, not glowing tubes. Thin lines match the clinical visual identity.
+- **Visual hierarchy**: Thin edges keep visual attention on the nodes. Thick edges would compete with nodes for attention and create a cluttered appearance.
+
+### Implementation
+
+The LineSegments geometry is built from a flat array of vertex positions. Each edge contributes two vertices (start and end positions, taken from the force layout). Colors are assigned per-vertex based on the edge type and activation state.
+
+At rest, all edges use the resting color (`#111E28`). When an endpoint node is active, the edge color interpolates toward a brighter value. The interpolation speed matches the node's activation decay, so edges cool down at the same rate as their nodes.
+
+### No Per-Edge Width Control
+
+`THREE.LineSegments` renders all lines at 1px (or the system's minimum line width). There is no way to vary line width per edge in WebGL 1.0/2.0 (this is a hardware limitation). If varying edge width is needed in the future, the edges would need to be replaced with instanced quads or tube geometry, at a significant performance cost.
+
+The current design compensates by using particles (see below) to convey edge strength: stronger edges have more frequent, faster particles.
+
+---
+
+## Edge Particles (EdgeParticles.tsx)
+
+### Why Points
+
+Edge particles are rendered as `THREE.Points` -- a single draw call that renders thousands of small squares (or circles with alpha discard) at arbitrary positions.
+
+Each particle has:
+- **Position**: Interpolated along its parent edge from source to target.
+- **Color**: Determined by the edge type.
+- **Size**: Small enough to appear as a bright dot.
+- **Progress**: A float from 0.0 to 1.0 indicating position along the edge.
+
+### Directional Motion
+
+Particles travel from source node to target node, not back and forth. This creates a visual flow direction that encodes the relationship's directionality. When a cluster of edges is active, you can see streams of particles converging on or radiating from hub nodes.
+
+### Speed and Density
+
+Particle speed scales with edge weight (cosine similarity score). Stronger connections have faster particles. The number of active particles per edge also scales with weight -- a strong connection might have 3-4 particles in flight simultaneously, while a weak one has 1.
+
+### Lifecycle
+
+Each particle:
+1. Spawns at the source node position (progress = 0.0).
+2. Moves along the edge at a rate determined by edge weight.
+3. Reaches the target node position (progress = 1.0).
+4. Resets to the source (progress = 0.0) and repeats.
+
+The spawn timing is staggered so particles along the same edge are evenly distributed rather than bunched together.
+
+---
+
+## Post-Processing
+
+### Effect Composer
+
+Lattice uses the Three.js EffectComposer for post-processing. Two effects are applied after the main scene render:
+
+### Bloom (UnrealBloomPass)
+
+Parameters:
+- Strength: 0.4
+- Threshold: 0.75
+- Radius: 0.15
+
+The bloom threshold is set high (0.75) so that only very bright pixels produce bloom. In practice, this means:
+
+- **Nodes at activation peak**: Produce visible bloom (white and bright yellow exceed the threshold).
+- **Nodes at rest**: No bloom (grey color is well below 0.75 brightness).
+- **Edges**: No bloom.
+- **Particles**: Minimal bloom (most particle colors are below the threshold).
+
+The tight radius (0.15) keeps bloom close to its source. There is no diffuse, atmospheric glow -- just a small halo around hot nodes.
+
+### Film Grain
+
+A very subtle noise overlay with intensity 0.006. This is nearly imperceptible but prevents the rendering from looking sterile. It adds organic texture without being noticeable as an effect.
+
+---
+
+## Animation Loop
+
+The animation loop runs via `requestAnimationFrame` and handles:
+
+1. **Activation decay**: For each node with an active activation, decrement the activation level based on elapsed time and `ACTIVATION_DECAY_MS`. Update instance colors accordingly.
+2. **Particle motion**: Advance each particle's progress along its edge. Reset particles that reach the target.
+3. **Idle firing**: If no node is selected/hovered and enough time has elapsed, fire a random node.
+4. **Hub breathing**: Update the scale oscillation for hub nodes.
+5. **Camera transitions**: If a fly-to animation is in progress, interpolate camera position.
+6. **Buffer updates**: Mark instance attribute buffers as needing upload (`needsUpdate = true`).
+7. **Render**: EffectComposer renders the scene with post-processing.
+
+### Performance Optimization
+
+The animation loop consolidates Zustand `getState()` calls. Rather than calling the store multiple times per frame (which creates overhead), it calls `getState()` once at the top of the frame and uses the snapshot throughout.
+
+Timing uses `performance.now()` for sub-millisecond precision. The activation system needs accurate timing to make the 50ms spike feel instant.
+
+---
+
+## Camera
+
+The camera is a `THREE.PerspectiveCamera` with orbit controls. Key parameters:
+
+- **Initial distance**: Computed from the graph bounds to show the full graph.
+- **Max distance**: Set to the initial distance (cannot zoom out further than the overview).
+- **Min distance**: Prevents entering the graph interior.
+- **Damping**: Enabled for smooth orbital motion.
+
+### View Offset
+
+When the InfoPanel opens, the camera's view offset is adjusted to shift the viewport left. This prevents the selected node from being hidden behind the panel. The offset is applied via `camera.setViewOffset`, which modifies the projection matrix without moving the camera, so the perspective remains correct and the transition is seamless.
+
+---
+
+## WebGL Context
+
+Lattice creates a single WebGL context for the entire application. Three.js manages the context lifecycle. If the context is lost (due to GPU memory pressure or system sleep), Three.js attempts to restore it automatically.
+
+The canvas uses `antialias: true` for smooth edges on node spheres. This has a minor performance cost but is important for the visual quality of 700 small spheres.

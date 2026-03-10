@@ -1,0 +1,122 @@
+# Follow-Up Conversations
+
+The Oracle supports follow-up questions that maintain conversational context. This lets you drill deeper into specific aspects of your situation without restating everything from scratch.
+
+---
+
+## How Follow-Ups Work
+
+After receiving your initial Oracle results, you can type a follow-up question in the same input field. The follow-up is sent to Claude along with the full conversation history -- your original query, the Oracle's previous response, and any prior follow-ups.
+
+This means the Oracle "remembers" what you have already discussed. You can:
+
+- Ask about a specific model in more depth: "Tell me more about how Loss Aversion applies here."
+- Narrow the scope: "Focus on the financial risk aspect -- which models matter most for that?"
+- Challenge the results: "I disagree with the Sunk Cost analysis. My investment is still generating returns."
+- Explore a tension: "The supporting models say go for it, but the challenging models say wait. How do I resolve that?"
+
+Each follow-up produces a new set of results (synthesis + model cards) that builds on the previous conversation.
+
+---
+
+## Conversation Context
+
+The Oracle maintains context across follow-ups within a single session. The conversation history includes:
+
+1. Your original situation description.
+2. Each Oracle response (synthesis + selected models).
+3. Each follow-up question.
+
+This context allows Claude to refine its recommendations. A follow-up might surface models that were not in the original 15, re-weight models based on new information you provide, or zoom into a specific aspect of the problem.
+
+### Context Window
+
+The conversation context is limited by Claude's context window. For most use cases, you can ask 5-10 follow-up questions before the context fills up. If you reach the limit, start a new Oracle session with a fresh query.
+
+### Session Persistence
+
+The conversation persists as long as you remain in Oracle Mode. If you leave Oracle Mode (by switching tabs or navigating away) and return, the conversation may be reset. This depends on the browser's behavior with component re-mounting.
+
+---
+
+## Effective Follow-Up Strategies
+
+### Depth-First
+
+Start with a broad situation description. Review the results. Then pick the model or tension that seems most important and ask a follow-up focused specifically on that.
+
+**Initial**: "I'm considering launching a SaaS product alongside my consulting business."
+
+**Follow-up 1**: "The Oracle mentioned Opportunity Cost and Focus -- how do I think about the time trade-off specifically?"
+
+**Follow-up 2**: "What if I bring on a co-founder to reduce the time burden? Which models change?"
+
+### Challenge Mode
+
+Use follow-ups to actively challenge the Oracle's initial recommendations.
+
+**Initial**: "Should I raise venture capital for my company?"
+
+**Follow-up**: "The supporting models are heavy on growth theory. But aren't they biased toward VC-backed outcomes? What about models that favor bootstrapping?"
+
+This forces the Oracle to reconsider its recommendations with your pushback as additional context.
+
+### Scenario Comparison
+
+Use follow-ups to compare different scenarios against the same model framework.
+
+**Initial**: "I'm deciding between taking a senior role at a large company or a leadership role at a 20-person startup."
+
+**Follow-up**: "Now assume the startup has a 60% chance of failing in 2 years. How does that change which models are most relevant?"
+
+---
+
+## Sharing Results
+
+The Oracle includes a share button that generates a URL with a `?q=` parameter encoding your query. When someone opens this URL, Lattice loads with the Oracle pre-filled with your query and automatically runs it.
+
+### What Is Shared
+
+- Your initial query text (encoded in the URL).
+- Nothing else -- no API key, no conversation history, no follow-ups.
+
+The recipient needs their own API key (or the deployment needs a server-side key) to actually run the query. The URL is a convenient way to say "ask the Oracle this question" without requiring the recipient to type it out.
+
+### What Is Not Shared
+
+- Your API key is never included in shared URLs.
+- Follow-up conversations are not included. Only the initial query is shareable.
+- Oracle results are not cached or stored. Each visit re-runs the query, which may produce slightly different results (Claude is non-deterministic).
+
+---
+
+## Graph Interaction During Follow-Ups
+
+While in a follow-up conversation, you can still interact with the graph:
+
+- Click model cards to focus them on the graph.
+- Use arrow keys to cycle through the current set of results.
+- Click nodes on the graph directly (the InfoPanel will show the node's details alongside the Oracle panel).
+
+Each follow-up response triggers a new firing sequence on the graph. If the new results contain different models than the previous response, you will see a new constellation light up, giving you a visual diff of how your refinement changed the Oracle's recommendations.
+
+---
+
+## Starting Fresh
+
+To start a new Oracle session (clearing all conversation context):
+
+1. Clear the input field.
+2. Refresh the page, or
+3. Leave Oracle Mode and re-enter it.
+
+There is no explicit "new session" button. The conversation context is ephemeral and lives in component state.
+
+---
+
+## Tips
+
+- Keep follow-ups concise. One question or one piece of new information per follow-up works better than a wall of text.
+- If the Oracle's initial results feel off, provide more context in a follow-up rather than starting over. The additional context often produces dramatically better results.
+- Use the graph visualization during follow-ups. Seeing which models light up (and which ones are different from the previous response) gives you insight into how your follow-up changed the analysis.
+- The share URL is a good way to bookmark interesting Oracle sessions. Even though results may vary slightly on re-run, the core recommendations tend to be stable for well-specified queries.

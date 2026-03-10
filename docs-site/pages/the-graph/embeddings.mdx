@@ -1,0 +1,127 @@
+# Embeddings
+
+The connections in Lattice were not hand-curated. They were generated through a two-stage pipeline combining vector embeddings with large language model classification. This page explains how the edge data was created.
+
+---
+
+## Overview of the Pipeline
+
+The process has two stages:
+
+1. **Embedding + Similarity**: All 700 model descriptions are embedded into high-dimensional vectors using Voyage-3. Cosine similarity identifies which pairs of models are semantically close.
+2. **Classification**: The most similar pairs are sent to Claude, which classifies the nature of each connection into one of the six semantic types (complementary, structural kinship, cross-discipline, prerequisite, tensioning, inversion).
+
+The result is 2,796 typed edges with associated similarity scores.
+
+---
+
+## Stage 1: Voyage-3 Embeddings
+
+### What Are Embeddings?
+
+An embedding is a numerical representation of text as a point in high-dimensional space. Texts that are semantically similar end up close together. Texts that are unrelated end up far apart. This is not keyword matching -- embeddings capture meaning, so "Expected Value" and "Probability-Weighted Average" would be close even though they share few words.
+
+### Why Voyage-3?
+
+Voyage-3 is an embedding model from Voyage AI, chosen for its strong performance on semantic similarity tasks and its ability to handle short, dense descriptions (the kind that make up mental model summaries). It produces embeddings in a high-dimensional space where cosine similarity reliably reflects conceptual relatedness.
+
+### The Process
+
+1. Each of the 700 model descriptions (name + summary) was sent to the Voyage-3 API.
+2. Each description was converted to a dense vector (the embedding).
+3. Cosine similarity was computed between all pairs of models. With 700 models, this means 244,650 unique pairs.
+4. Pairs above a similarity threshold were selected as candidate edges.
+
+### Cosine Similarity
+
+Cosine similarity measures the angle between two vectors, ignoring their magnitude. It produces a score between -1 and 1, where:
+
+- **1.0** means identical direction (very similar meaning)
+- **0.0** means orthogonal (unrelated)
+- **-1.0** means opposite direction (rare in practice with text embeddings)
+
+For Lattice, pairs with cosine similarity above approximately 0.35 were considered candidates for edges. This threshold was tuned to produce a graph that is densely connected enough to be navigable but not so dense that every node connects to every other node.
+
+---
+
+## Stage 2: Claude Classification
+
+Raw similarity scores tell you that two models are related, but not how they are related. "Expected Value" and "Gambler's Fallacy" might have high cosine similarity (both involve probability), but the relationship is one of tension -- Gambler's Fallacy is a violation of what Expected Value prescribes.
+
+### The Classification Prompt
+
+Each candidate pair was sent to Claude (Sonnet) with a structured prompt that included:
+
+- The names and descriptions of both models
+- Definitions of the six edge types (complementary, structural kinship, cross-discipline, prerequisite, tensioning, inversion)
+- Instructions to select the single best-fitting type
+- Examples of each type for calibration
+
+Claude returned a JSON response with the edge type and a brief rationale.
+
+### Why Not Just Use Embeddings?
+
+Embeddings are excellent at measuring "how close" two concepts are, but they cannot distinguish between different kinds of closeness. Two models can be near each other in embedding space because:
+
+- They are complementary (use together for better results)
+- One is a prerequisite of the other (learn A before B)
+- They are in tension (opposing perspectives on the same topic)
+- They are inversions (direct opposites)
+
+All of these produce high cosine similarity. Only a language model can read the descriptions and determine which relationship actually holds. This is why the two-stage pipeline is necessary -- embeddings for recall, LLM for precision.
+
+---
+
+## Handling Disconnected Nodes
+
+After the first pass, some models had zero or very few connections. These were typically niche models with specialized vocabulary that did not produce high cosine similarity with any other model.
+
+A second pass addressed this:
+
+1. Disconnected or low-degree nodes were identified.
+2. Their descriptions were re-embedded using sentence-transformers (a different embedding model) to get a second opinion on similarity.
+3. The top candidate pairs from this second embedding were sent to Claude for classification.
+4. Valid connections were added to the edge set.
+
+This two-model approach ensures that no mental model is completely isolated in the graph. Every node has at least a few connections, even if they are weak.
+
+---
+
+## Edge Weights
+
+Each edge in the final dataset has a `weight` field between 0 and 1. This weight is derived from the original cosine similarity score of the pair's embeddings. Higher weight means the two models were closer in embedding space -- their descriptions are more semantically similar.
+
+In the visualization, weight affects:
+
+- **Particle speed**: Stronger connections have faster-moving particles
+- **Particle density**: More particles travel along higher-weight edges
+- **Visual brightness**: Stronger edges are slightly more visible at rest
+
+Weight does not affect edge type. A complementary edge with weight 0.4 and a complementary edge with weight 0.9 are both complementary -- the weight just indicates how obvious the similarity is from the text alone.
+
+---
+
+## Limitations
+
+This approach has known limitations:
+
+**Embedding bias**: Voyage-3 was trained on general text. It may overweight surface-level vocabulary similarity (two models that use the word "probability" a lot) and underweight deep structural similarity (two models that work the same way but use different terminology). The structural kinship type is particularly affected by this -- some true structural parallels may be missing because the embedding model did not recognize the shared mechanism.
+
+**Summary length**: All model summaries are capped at 300 characters. This is enough for the embedding model to work with, but longer descriptions would produce more nuanced similarity scores. Some subtle relationships may be missing because the summaries do not contain enough detail.
+
+**Classification consistency**: While Claude is generally consistent, edge type assignments for borderline cases (is this complementary or cross-discipline?) may vary. The types are not perfectly crisp categories -- they have fuzzy boundaries, and reasonable people could disagree on some classifications.
+
+**No human review of all edges**: With 2,796 edges, individual human review of every connection was not feasible. Spot checks were performed to validate the pipeline's quality, but some misclassified edges likely exist.
+
+---
+
+## Reproducibility
+
+The pipeline is deterministic given the same inputs and model versions. To regenerate the edges from scratch, you would need:
+
+1. The full text of all 700 model descriptions
+2. Access to the Voyage-3 API (same model version)
+3. Access to Claude Sonnet (same model version)
+4. The classification prompt (including type definitions and examples)
+
+Note that regeneration with newer model versions would produce slightly different results, as both the embedding model and the classification model evolve over time.

@@ -1,0 +1,167 @@
+# Deployment
+
+Lattice is a standard Next.js application that can be deployed anywhere Next.js runs. This page covers deployment to Vercel (the simplest option) and alternative platforms.
+
+---
+
+## Vercel (Recommended)
+
+Vercel is the company behind Next.js and provides the most straightforward deployment experience.
+
+### One-Click Deploy
+
+1. Push your Lattice repository to GitHub (or GitLab/Bitbucket).
+2. Go to [vercel.com](https://vercel.com) and sign in.
+3. Click **Add New Project**.
+4. Import your Lattice repository.
+5. Vercel auto-detects the Next.js framework. Accept the default build settings.
+6. (Optional) Add the `ANTHROPIC_API_KEY` environment variable if you want server-side Oracle access.
+7. Click **Deploy**.
+
+The build takes 1-2 minutes. When complete, Vercel provides a `.vercel.app` URL where your instance is live.
+
+### Custom Domain
+
+In the Vercel dashboard:
+
+1. Go to your project settings.
+2. Click **Domains**.
+3. Add your custom domain (e.g., `lattice.yourdomain.com`).
+4. Update your DNS records as instructed (CNAME or A record).
+
+SSL is automatically provisioned by Vercel.
+
+### Environment Variables on Vercel
+
+In the project dashboard:
+
+1. Go to **Settings** > **Environment Variables**.
+2. Add `ANTHROPIC_API_KEY` with your key value.
+3. Select which environments it applies to (Production, Preview, Development).
+4. Redeploy to pick up the new variable.
+
+### Automatic Deployments
+
+By default, Vercel deploys automatically on every push to your main branch. Pull requests get preview deployments with unique URLs. This is useful for testing changes before they go live.
+
+---
+
+## Alternative Platforms
+
+Lattice runs on any platform that supports Next.js. Here are the most common alternatives.
+
+### Docker
+
+Create a `Dockerfile` in the project root:
+
+```dockerfile
+FROM node:18-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV production
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/public ./public
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+Build and run:
+
+```bash
+docker build -t lattice .
+docker run -p 3000:3000 -e ANTHROPIC_API_KEY=sk-ant-... lattice
+```
+
+### Railway
+
+1. Connect your GitHub repository to [Railway](https://railway.app).
+2. Railway auto-detects Next.js.
+3. Add the `ANTHROPIC_API_KEY` environment variable in the dashboard.
+4. Deploy.
+
+### Netlify
+
+Netlify supports Next.js through the `@netlify/plugin-nextjs` plugin. Note that Netlify's Next.js support has some limitations compared to Vercel, particularly around API routes and serverless functions. The Oracle API route should work, but test it in a preview deploy first.
+
+### Static Export
+
+Lattice cannot be deployed as a fully static site (using `next export`) because the Oracle uses an API route (`/api/oracle`). If you do not need the Oracle, you could modify the application for static export, but this is not a supported configuration.
+
+---
+
+## Performance Considerations
+
+### CDN and Caching
+
+The static data files (`nodes.json` and `edges.json`) are served from the `public/` directory and benefit from CDN caching on Vercel. They are approximately 500KB combined and are loaded once per session.
+
+Three.js and other JavaScript bundles are automatically code-split and cached by Next.js. The initial load transfers approximately 1-2MB of JavaScript (gzipped), which is typical for a Three.js application.
+
+### WebGL Requirements
+
+Lattice requires WebGL support in the browser. All modern desktop and mobile browsers support WebGL. Users on very old devices or browsers with WebGL disabled will see a blank canvas.
+
+There is no server-side rendering of the 3D graph. The Three.js components use the `'use client'` directive and render entirely in the browser. This means the server does not need GPU capabilities.
+
+### Memory
+
+The graph data (700 nodes, 2,796 edges, positions, colors) occupies approximately 5-10MB in browser memory. The Three.js scene with InstancedMesh, LineSegments, and Points adds another 10-20MB for geometry buffers. Total memory usage is typically 30-50MB, well within the capabilities of any modern device.
+
+---
+
+## Monitoring
+
+### Vercel Analytics
+
+If deployed on Vercel, you can enable Vercel Analytics for page load times and Web Vitals. This is useful for tracking the initial load experience, which is dominated by:
+
+1. JavaScript bundle download
+2. JSON data download
+3. Force layout computation (first visit only)
+4. Three.js scene initialization
+
+### Error Tracking
+
+Consider adding error tracking (Sentry, LogRocket, etc.) if deploying for a large audience. The most common runtime errors are:
+
+- WebGL context lost (GPU ran out of memory -- rare but possible on mobile)
+- API route failures (Anthropic rate limits, invalid keys)
+- localStorage quota exceeded (extremely rare)
+
+---
+
+## Security Checklist
+
+Before deploying a public Lattice instance:
+
+- [ ] **HTTPS**: Ensure your deployment uses HTTPS. Vercel provides this automatically. Other platforms may require configuration.
+- [ ] **API key exposure**: If you set `ANTHROPIC_API_KEY` as a server-side environment variable, ensure it is not exposed in client-side code or build logs.
+- [ ] **Rate limiting**: If you provide a server-side API key, consider adding rate limiting to the `/api/oracle` route to prevent abuse.
+- [ ] **Content Security Policy**: Add CSP headers to prevent XSS attacks, especially if your deployment allows any form of user input beyond the Oracle query.
+- [ ] **CORS**: The default Next.js API route does not set CORS headers. If you need cross-origin access to the Oracle API, configure it explicitly.
+
+---
+
+## Updates
+
+To update your deployment with the latest Lattice code:
+
+1. Pull the latest changes from the repository.
+2. If on Vercel with automatic deployments, pushing to main triggers a new deploy.
+3. If on Docker or other platforms, rebuild and redeploy.
+
+The data files (`nodes.json` and `edges.json`) rarely change. Code updates typically involve UI improvements, performance optimizations, or new features.
+
+Users do not need to clear their localStorage after most updates. The layout cache uses a version key; if the data changes, the cache is automatically invalidated.

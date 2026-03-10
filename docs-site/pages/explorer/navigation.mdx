@@ -1,0 +1,155 @@
+# Navigation
+
+Lattice renders a 3D graph of 700 nodes. Navigating it efficiently requires understanding the camera controls, selection mechanics, search system, and keyboard shortcuts.
+
+---
+
+## Camera Controls
+
+The graph sits in a 3D space rendered by Three.js. You interact with the camera using standard orbit controls.
+
+### Mouse / Trackpad
+
+- **Left-click drag**: Orbit the camera around the center point. The graph rotates as you drag.
+- **Right-click drag**: Pan the camera laterally. The center point moves with you.
+- **Scroll wheel**: Zoom in and out. Scrolling moves the camera closer to or further from the graph.
+- **Pinch (trackpad)**: Same as scroll -- zooms in and out.
+
+### Touch (Mobile / Tablet)
+
+- **Single finger drag**: Orbit
+- **Two finger drag**: Pan
+- **Pinch**: Zoom
+
+### Camera Constraints
+
+The camera has a maximum zoom-out distance set to keep the full graph in view. You cannot zoom out infinitely. The minimum zoom distance prevents you from entering the inside of the graph, which would be disorienting.
+
+When the InfoPanel opens (after selecting a node), the viewport shifts slightly to the left. This prevents the selected node from being obscured by the panel. The shift is applied using Three.js `camera.setViewOffset`, so the perspective remains correct.
+
+---
+
+## Selecting Nodes
+
+### Click
+
+A single click on a node selects it. When a node is selected:
+
+1. The node fires with the activation sequence (white spike, yellow, amber, decay).
+2. The InfoPanel opens on the right side, showing the model's name, discipline, summary, and connections.
+3. Connected nodes receive a secondary activation (slightly delayed, lower intensity).
+4. Particles begin traveling along the selected node's edges.
+5. The viewport shifts left to accommodate the InfoPanel.
+
+Clicking empty space (not on a node) deselects the current selection and closes the InfoPanel.
+
+### Hover
+
+Moving the cursor over a node without clicking shows a tooltip with the model's name and discipline. The tooltip is colored with the discipline color and separated by a dot. The node brightens slightly on hover (`#8CB4CC`) to provide visual feedback.
+
+The hover detection uses a raycaster with dynamic hit areas. When you are zoomed far out, nodes are small on screen, so the hit area is enlarged to make targeting easier. When zoomed in, hit areas shrink to match the visual size of nodes. This adaptive scaling ensures that clicking is equally easy at any zoom level.
+
+---
+
+## Search
+
+Press `Cmd+K` (macOS) or `/` to open the search modal. Type any part of a model name to fuzzy-search across all 700 models. Results appear as you type, ranked by match quality.
+
+When you select a search result:
+
+1. The search modal closes.
+2. The camera pans smoothly to center the target node. Importantly, the camera only pans -- it does not zoom in. This keeps you oriented in the broader graph context.
+3. The target node is selected and fires.
+
+Search is the fastest way to find a specific model. If you know the name (or even part of it), search is quicker than visually scanning the graph.
+
+---
+
+## Navigation History
+
+Lattice maintains a navigation history as you explore. Every time you select a node -- whether by clicking, searching, or navigating from the InfoPanel -- that node is pushed onto the history stack.
+
+### Going Back
+
+- Click the back arrow in the InfoPanel header.
+- Press the `Backspace` key.
+
+Going back pops the most recent node from the history stack and returns focus to the previous node. The camera pans back to the previous node's position.
+
+This enables a breadcrumb-style exploration pattern: click a node, explore its connections, click a connected node, explore further, then backtrack through your trail.
+
+---
+
+## Keyboard Shortcuts
+
+Lattice has a comprehensive set of keyboard shortcuts for efficient navigation.
+
+### General
+
+| Key | Action |
+|---|---|
+| `Cmd+K` or `/` | Open search |
+| `Escape` | Deselect current node / Close search |
+| `Backspace` | Go back in navigation history |
+| `R` | Select a random "neuron of the day" |
+| `Shift+R` | Select a truly random neuron |
+| `F` | Fly camera to the currently selected node |
+
+### Connection Navigation
+
+When a node is selected, you can navigate through its connections using the keyboard:
+
+| Key | Action |
+|---|---|
+| `Arrow Right` / `Arrow Down` | Next connected node |
+| `Arrow Left` / `Arrow Up` | Previous connected node |
+| `Tab` | Cycle to next connection |
+| `Enter` | Select the highlighted connection |
+
+This lets you traverse the graph entirely from the keyboard. Select a starting node, use arrow keys to browse its connections, press Enter to jump to one, and use Backspace to come back.
+
+### Discipline Toggles
+
+| Key | Action |
+|---|---|
+| `1` | Toggle Probability |
+| `2` | Toggle Investing |
+| `3` | Toggle Behavioral Economics |
+| `4` | Toggle Algorithms & ML |
+| `5` | Toggle Economics |
+| `6` | Toggle Financial Theory |
+| `7` | Toggle Mathematics |
+| `8` | Toggle Elementary Models |
+| `9` | Toggle Philosophy |
+| `0` | Show all disciplines / Reset |
+
+When a discipline is toggled on, its nodes light up with the discipline color, making it easy to see the spatial distribution of that field across the graph.
+
+---
+
+## Idle Firing
+
+When nothing is selected and you are not interacting with the graph, Lattice simulates spontaneous neural activity. A random node fires every 4-8 seconds, producing the full activation sequence (white spike, thermal decay). This keeps the graph feeling alive rather than static.
+
+Idle firing stops when you select a node or hover over one, and resumes when the graph is idle again.
+
+---
+
+## First Visit
+
+On your first visit, Lattice displays an onboarding overlay with brief hints about the primary interactions:
+
+- Click nodes to explore
+- Double-click for Synapse Mode
+- `Cmd+K` to search
+- Use the legend to filter
+
+This overlay appears once and is gated by localStorage. After dismissing it, it does not return.
+
+---
+
+## Performance Notes
+
+The raycaster (used for hover and click detection) scales its hit areas dynamically with camera distance. At far zoom levels, the hit radius is larger so you can target small nodes. At close zoom levels, the hit radius matches the visual node size for precision.
+
+Camera transitions (panning to a node after search or navigation) use smooth interpolation over 800ms. During this transition, interaction is briefly paused to prevent accidental selections while the camera is moving.

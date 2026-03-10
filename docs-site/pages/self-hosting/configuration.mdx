@@ -1,0 +1,164 @@
+# Configuration
+
+Lattice is designed to work out of the box with minimal configuration. This page covers the environment variables, build options, and customization points available when self-hosting.
+
+---
+
+## Environment Variables
+
+Lattice uses a single optional environment variable:
+
+### ANTHROPIC_API_KEY
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+**Required**: No. Without this variable, the Oracle still works -- users just need to provide their own API key through the browser UI.
+
+**Purpose**: When set, this key is used as the default for all Oracle requests. Users do not need to enter their own keys.
+
+**Where to set it**: Create a `.env.local` file in the project root (for local development) or set it in your deployment platform's environment variable configuration.
+
+**Security note**: This key grants access to your Anthropic account and incurs costs for API usage. Only set it on deployments where you trust all users, or add authentication middleware to the Oracle route.
+
+---
+
+## No Database Required
+
+Lattice does not use a database. All data is stored in two static JSON files:
+
+- `public/data/nodes.json` -- 700 mental models with names, disciplines, and summaries.
+- `public/data/edges.json` -- 2,796 connections with types and weights.
+
+These files are read by the client at page load. They are served as static assets by Next.js, with no server-side data processing required.
+
+User state (API key, layout cache, onboarding status) is stored in the browser's localStorage. Nothing is stored server-side.
+
+---
+
+## Color Customization
+
+All colors in Lattice are defined in `lib/constants.ts`. This file is the single source of truth for:
+
+- Background color
+- Node colors (rest, hover, activation sequence)
+- Edge colors
+- Discipline colors (10 disciplines)
+- Particle colors (per edge type)
+- Bloom parameters
+- Film grain intensity
+
+To customize the visual appearance, edit this file. All components and shaders read from these constants, so changes propagate automatically.
+
+### Example: Changing the Background
+
+```typescript
+// lib/constants.ts
+export const BACKGROUND_COLOR = "#0A0A0A"; // warmer dark grey instead of cool blue-black
+```
+
+### Example: Changing a Discipline Color
+
+```typescript
+export const DISCIPLINE_COLORS = {
+  "Probability": "#3A7BD5", // darker blue
+  // ... other disciplines
+};
+```
+
+Be cautious when changing activation sequence colors. The thermal decay (`#FFFFFF` to `#FFE566` to `#E8A030` to `#C47A20`) is designed to produce a realistic-looking cooldown. Arbitrary color changes may break this illusion.
+
+---
+
+## Timing Constants
+
+The timing of visual effects is also controlled in `lib/constants.ts`:
+
+| Constant | Default | Description |
+|---|---|---|
+| `ACTIVATION_SPIKE_MS` | 50 | Duration of the white spike (instant) |
+| `ACTIVATION_DECAY_MS` | 2500 | Duration of the thermal decay |
+| `CAMERA_FLY_MS` | 800 | Camera transition duration |
+| `DISCIPLINE_COLOR_WINDOW_MS` | 300 | How long discipline color shows at peak |
+
+Increasing `ACTIVATION_DECAY_MS` makes fired nodes glow longer. Decreasing it makes the graph feel more snappy. The default of 2500ms is tuned to feel biological -- slow enough to watch, fast enough to not linger.
+
+---
+
+## Node Sizing
+
+Node size parameters in `lib/constants.ts`:
+
+| Constant | Default | Description |
+|---|---|---|
+| `NODE_BASE_RADIUS` | 0.35 | Base sphere radius |
+| `NODE_DEGREE_SCALE` | 0.35 | How much degree affects size |
+
+The size formula is: `baseRadius * (1 + log(degree + 1) * degreeScale)`
+
+Increasing `NODE_DEGREE_SCALE` makes the size difference between hub nodes and peripheral nodes more dramatic. Decreasing it makes all nodes more uniform.
+
+---
+
+## Bloom Settings
+
+| Constant | Default | Description |
+|---|---|---|
+| `BLOOM_STRENGTH` | 0.4 | Overall bloom intensity |
+| `BLOOM_THRESHOLD` | 0.75 | Minimum brightness to produce bloom |
+| `BLOOM_RADIUS` | 0.15 | How far bloom spreads from source |
+
+The high threshold (0.75) ensures only activated nodes produce bloom. Lowering it would cause resting nodes to glow, which breaks the "clinical" aesthetic. Increasing `BLOOM_RADIUS` creates more diffuse glow; the default 0.15 keeps it tight.
+
+---
+
+## API Route Configuration
+
+The Oracle API route lives at `app/api/oracle/route.ts`. It:
+
+1. Receives the user's query and (optionally) their API key from the request body.
+2. Falls back to the `ANTHROPIC_API_KEY` environment variable if no client-side key is provided.
+3. Sends the query + full model context to Claude Sonnet.
+4. Returns the structured response.
+
+If you want to modify the Oracle's behavior (change the system prompt, adjust the number of recommended models, alter the role categories), edit this route file.
+
+### Model Selection
+
+The Oracle uses `claude-sonnet-4-20250514` by default. To use a different Claude model, change the model identifier in the API route. Note that different models may produce different quality results and have different pricing.
+
+---
+
+## Build Configuration
+
+Lattice uses a standard Next.js build process:
+
+```bash
+npm run build    # Production build
+npm run start    # Start production server
+npm run dev      # Development server with hot reload
+npm run lint     # ESLint
+```
+
+The Next.js configuration is in `next.config.js` (or `.mjs`). The default configuration is minimal -- no custom webpack configuration, no image optimization settings, no redirects. The application is straightforward enough to not require framework-level customization.
+
+### TypeScript
+
+Lattice uses TypeScript in strict mode. The `tsconfig.json` enforces:
+
+- `strict: true`
+- No `any` types (enforced by convention, not compiler flag)
+- Path aliases (`@/` maps to the project root)
+
+---
+
+## Static Data
+
+The graph data in `public/data/` is loaded by the client as static JSON. If you modify these files (not recommended), be aware:
+
+- `nodes.json` entries are referenced by ID from `edges.json`. Changing or removing a node ID will break edge references.
+- The force layout cache in localStorage is based on the current data. If you change the data, users need to clear their localStorage to recompute positions.
+- Edge counts and types affect the visual balance of the graph. Adding many edges could create visual clutter; removing edges could create isolated nodes.
+
+The data files are marked as read-only in the project conventions. If you need custom data, fork the repository and replace the files, but understand the coupling between nodes and edges.

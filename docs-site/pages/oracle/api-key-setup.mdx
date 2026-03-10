@@ -1,0 +1,127 @@
+# API Key Setup
+
+The Oracle requires an Anthropic API key to function. This page walks you through obtaining a key, configuring it in Lattice, and understanding how it is stored and used.
+
+---
+
+## Getting an Anthropic API Key
+
+1. Go to [console.anthropic.com](https://console.anthropic.com).
+2. Create an account or sign in.
+3. Navigate to **API Keys** in the dashboard.
+4. Click **Create Key**.
+5. Give it a name (e.g., "Lattice") and copy the key. It starts with `sk-ant-`.
+6. Store the key securely. You will not be able to see it again after leaving the page.
+
+You will need to add credit to your Anthropic account before the key can make API calls. Anthropic offers a small free tier for new accounts; after that, API usage is billed per token.
+
+---
+
+## Entering Your Key in Lattice
+
+When you first enter Oracle Mode (click the ORACLE tab), the input area shows an inline field for your API key. This appears directly in the Oracle card, not in a separate settings menu.
+
+1. Click the ORACLE tab at the top of the screen.
+2. Paste your API key into the key field (labeled with a key icon).
+3. Lattice immediately validates your key by making a small test API call.
+4. If the key is valid, a green dot indicator appears next to the key field.
+5. The key field collapses, and the Oracle input area becomes active.
+
+If validation fails, you will see an error message. Common causes:
+
+- **Invalid key**: Double-check you copied the full key, including the `sk-ant-` prefix.
+- **No credit**: Your Anthropic account may need billing information or credit added.
+- **Rate limited**: If you have made many API calls recently, you may be temporarily rate-limited.
+
+---
+
+## How the Key Is Stored
+
+Your API key is stored in **localStorage** in your browser. This means:
+
+- It persists across page refreshes and browser sessions.
+- It is specific to the browser and device you are using.
+- It is never sent to any server other than Anthropic's API endpoint.
+- It is never included in URLs, cookies, or server-side logs.
+
+When you make an Oracle query, the flow is:
+
+```
+Your browser → Lattice API route (/api/oracle) → Anthropic API → Response
+```
+
+The API key is sent from your browser to Lattice's API route (which runs on the same server or Vercel function as the rest of the app). The API route uses the key to authenticate with Anthropic's API and returns the response. At no point is the key stored server-side or transmitted to a third party.
+
+---
+
+## Changing or Removing Your Key
+
+To change your API key:
+
+1. Enter Oracle Mode.
+2. Click the key indicator (green dot) or the settings icon near the input area.
+3. A modal appears showing your current key (partially masked).
+4. Clear the field and paste a new key.
+5. The new key is validated and replaces the old one in localStorage.
+
+To remove your key entirely, clear the field and dismiss the modal. Your key will be removed from localStorage, and Oracle Mode will revert to showing the key input field.
+
+---
+
+## Self-Hosted Instances
+
+If you are self-hosting Lattice, you have an additional option: setting the API key as a server-side environment variable.
+
+Create a `.env.local` file in the project root:
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+When this environment variable is set, the `/api/oracle` route uses it as the default key. Users do not need to provide their own keys -- the Oracle works out of the box.
+
+This is useful for:
+
+- **Team deployments** where you want everyone to have Oracle access without managing individual keys.
+- **Demo instances** where you want visitors to try the Oracle immediately.
+- **Internal tools** where the API cost is absorbed by the organization.
+
+The server-side key takes precedence over any client-side key. If both are present, the server-side key is used.
+
+---
+
+## Security Considerations
+
+**Browser storage**: localStorage is accessible to any JavaScript running on the same origin. If you are concerned about XSS attacks on a self-hosted instance, ensure your deployment is properly secured (HTTPS, Content Security Policy headers, no user-generated content that could inject scripts).
+
+**API key scope**: Anthropic API keys provide access to all API endpoints for your account. There is no way to create a key scoped specifically to Claude Sonnet or to set a spending limit per key. Monitor your usage in the Anthropic dashboard.
+
+**Cost control**: Each Oracle query costs a few cents. Heavy usage (dozens of queries per day) could add up. Set up billing alerts in your Anthropic account if cost is a concern.
+
+**Shared deployments**: If you set a server-side API key for a public deployment, anyone who visits your instance can make Oracle queries at your expense. Consider adding authentication or rate limiting if this is a concern.
+
+---
+
+## Troubleshooting
+
+### "Invalid API Key" error
+
+- Confirm the key starts with `sk-ant-`.
+- Confirm you copied the entire key (they are long strings).
+- Try generating a new key in the Anthropic console.
+
+### "Rate Limited" error
+
+- Anthropic applies rate limits based on your account tier.
+- Wait a minute and try again.
+- Check the Anthropic console for your current rate limit tier.
+
+### "Insufficient Credit" error
+
+- Add credit or a payment method to your Anthropic account.
+- New accounts may have a small free tier that has been exhausted.
+
+### Oracle tab does not appear
+
+- The Oracle tab is always visible. If you do not see it, check that you are using the latest version of Lattice.
+- Clear your browser cache and reload.

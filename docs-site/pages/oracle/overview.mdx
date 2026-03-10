@@ -1,0 +1,97 @@
+# Oracle Overview
+
+The Oracle is Lattice's AI-powered reasoning layer. It takes a situation you describe in natural language and maps it onto the graph of 700 mental models, identifying the frameworks most relevant to your thinking.
+
+---
+
+## What the Oracle Does
+
+You describe a decision, problem, or situation. The Oracle analyzes it against all 700 mental models and returns:
+
+1. **A synthesis** -- 3-5 sentences that weave the most relevant models into a coherent thinking framework for your situation.
+2. **15 model recommendations**, grouped by role:
+   - **Supporting**: Models that argue for a direction or validate an approach.
+   - **Challenging**: Models that present counterpoints, risks, or warnings.
+   - **Process**: Models about how to think, when to act, or what method to apply.
+3. For each recommended model, a **stance** (what this model argues in your context) and a **question** (a pointed question to ask yourself, derived from this model).
+
+---
+
+## How It Works
+
+The Oracle uses a **two-pass architecture** powered by Claude Sonnet, designed to balance breadth (scanning all 700 models) with depth (rich context for the final selection).
+
+### Pass 1: Shortlist (`/api/oracle/shortlist`)
+
+1. Your query is sent to the shortlist endpoint along with a compact list of all 700 models (ID, name, and discipline only -- no summaries).
+2. Claude scans the full set and selects the **25 most relevant candidates**, reasoning across disciplines.
+3. The 25 candidate IDs are returned to the client.
+
+This pass is fast because the payload is small (~15KB). It ensures broad coverage -- Claude sees every model and can surface non-obvious connections that keyword matching or embeddings would miss.
+
+### Pass 2: Deep Analysis (`/api/oracle`)
+
+1. The 25 candidate IDs are sent to the analysis endpoint.
+2. The server builds **enriched profiles** for each candidate: full summary text plus up to 6 graph connections to other candidates (with edge type and strength).
+3. Claude receives these profiles with full relationship context -- which candidates have complementary edges, which create tension, which are prerequisites for each other.
+4. Claude selects the **15 most relevant** from the 25, classifies each by role, writes stances that reference inter-model relationships, and composes the synthesis.
+
+The key design decision in Pass 2 is **edge enrichment**. The graph contains ~4,000 typed edges (complementary, tension, structural kinship, prerequisite, inversion, cross-discipline). By showing Claude which candidates are connected and how, the Oracle can reason about model interactions -- not just individual relevance but how models work together or create productive friction.
+
+---
+
+## Using the Oracle
+
+### Entering Oracle Mode
+
+Click the **ORACLE** tab at the top of the screen. The view transitions to the Oracle input interface, which consists of a text area for your description and (if no API key is configured) an inline field for your Anthropic API key.
+
+### Writing a Good Query
+
+The Oracle works best with specific, concrete descriptions. Compare:
+
+**Vague**: "How should I think about my career?"
+
+**Specific**: "I have a job offer from a startup with higher equity but 30% less salary than my current role. The startup is pre-revenue but has strong technology. I have a family and a mortgage."
+
+The specific version gives the Oracle enough context to recommend models about risk assessment (Kelly Criterion), opportunity cost, optionality, survivorship bias (for startups), and margin of safety -- along with behavioral models about loss aversion and status quo bias that might be distorting your thinking.
+
+### Receiving Results
+
+After submitting, results arrive within a few seconds. The Oracle presents:
+
+1. The **synthesis** at the top -- read this first for the integrated framework.
+2. Individual **model cards** below, grouped into Supporting, Challenging, and Process sections.
+3. Each card shows the model name, its stance in your context, and the question to ask yourself.
+
+Simultaneously, the recommended models fire on the graph. The camera frames the activated constellation, giving you a visual sense of where in the model space your situation lives. Models from multiple disciplines? Your problem is cross-domain. Models clustered tightly? There is a core theme.
+
+### Interacting with Results
+
+- **Click any result card** to focus that model on the graph. The camera pans to it, and its connections light up.
+- **Arrow keys** cycle through results, highlighting each on the graph in turn.
+- Continue reading about [how results work](/oracle/how-results-work) for a detailed breakdown of the result structure.
+
+---
+
+## What the Oracle Is Not
+
+The Oracle does not make decisions for you. It does not predict outcomes. It does not generate new mental models.
+
+What it does is ensure you are thinking about your situation with the right tools. It surfaces frameworks you may not have considered and organizes them by whether they support, challenge, or guide your thinking process.
+
+The synthesis provides a starting framework, but the real value is in the individual model recommendations. Each stance and question is designed to open a line of thinking, not close one.
+
+---
+
+## Privacy
+
+The Oracle requires an Anthropic API key to function. Your query is sent to Anthropic's API through Lattice's proxy route (`/api/oracle`). It is not stored, logged, or shared with any other service.
+
+Your API key is stored in localStorage in your browser. It is never sent to any server other than Anthropic's API endpoint. See [API Key Setup](/oracle/api-key-setup) for details.
+
+---
+
+## Cost
+
+Each Oracle query makes two API calls to Claude Sonnet (one for shortlisting, one for deep analysis). Pass 1 is lightweight (~300 output tokens). Pass 2 is larger (~3,500 output tokens with enriched context). A typical query costs a few cents total in API usage. Anthropic bills you directly through your API key -- Lattice does not add any markup or fees.
