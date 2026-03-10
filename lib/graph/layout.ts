@@ -5,7 +5,7 @@ import {
   forceLink,
 } from "d3-force-3d";
 import type { NodeData, EdgeData, LayoutNode, NodePosition } from "@/lib/graph/types";
-import { NODE_BASE_RADIUS, NODE_DEGREE_SCALE } from "@/lib/constants";
+import { NODE_MIN_RADIUS, NODE_MAX_RADIUS } from "@/lib/constants";
 
 const CACHE_KEY = "lattice-layout-v4";
 const SIM_ITERATIONS = 300;
@@ -34,8 +34,10 @@ interface CachedLayout {
   nodeCount: number;
 }
 
-function computeRadius(degree: number): number {
-  return NODE_BASE_RADIUS * (1 + Math.log(degree + 1) * NODE_DEGREE_SCALE);
+function computeRadius(degree: number, maxDegree: number): number {
+  // Power curve: low-degree nodes stay small, high-degree hubs grow large
+  const t = maxDegree > 0 ? degree / maxDegree : 0;
+  return NODE_MIN_RADIUS + Math.pow(t, 0.4) * (NODE_MAX_RADIUS - NODE_MIN_RADIUS);
 }
 
 function getCachedLayout(nodeCount: number): Record<string, NodePosition> | null {
@@ -75,12 +77,14 @@ export function computeLayout(
   onProgress?: (count: number) => void,
 ): LayoutNode[] {
   // Check cache first
+  const maxDegree = Math.max(...nodes.map((n) => n.degree), 1);
+
   const cached = getCachedLayout(nodes.length);
   if (cached) {
     return nodes.map((node) => ({
       ...node,
       position: cached[node.id] ?? { x: 0, y: 0, z: 0 },
-      radius: computeRadius(node.degree),
+      radius: computeRadius(node.degree, maxDegree),
     }));
   }
 
@@ -138,6 +142,6 @@ export function computeLayout(
   return nodes.map((node) => ({
     ...node,
     position: positions[node.id] ?? { x: 0, y: 0, z: 0 },
-    radius: computeRadius(node.degree),
+    radius: computeRadius(node.degree, maxDegree),
   }));
 }

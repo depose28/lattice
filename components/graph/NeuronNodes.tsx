@@ -104,8 +104,9 @@ const fragmentShader = /* glsl */ `
     float fresnel = pow(1.0 - NdotV, 3.0);
 
     // fMRI discipline coloring: blend rest color toward discipline color
-    // Hub nodes are inherently brighter at rest — they glow like active synaptic junctions
-    vec3 hubBrightened = uRestColor * (1.0 + vHubness * 0.5);
+    // Hub nodes are brighter at rest — structural anchors glow like active synaptic junctions
+    vec3 hubTint = vec3(0.06, 0.04, 0.02) * smoothstep(0.6, 1.0, vHubness); // warm tint for top hubs
+    vec3 hubBrightened = uRestColor * (1.0 + vHubness * 0.7) + hubTint;
     vec3 restColor = mix(hubBrightened, vDisciplineColor * 0.8 + vec3(0.1), vDisciplineGlow * 0.85);
 
     float act = sigmoid(vActivation, 8.0);
@@ -177,9 +178,9 @@ export function createNeuronNodes(
   for (let i = 0; i < count; i++) {
     phaseOffsets[i] = Math.random() * Math.PI * 2;
 
-    // Hubness: normalized degree with a curve to emphasize top hubs
-    // pow(x, 0.6) makes the curve more gradual — only truly high-degree nodes shine
-    hubnesses[i] = maxDegree > 0 ? Math.pow(nodes[i].degree / maxDegree, 0.6) : 0;
+    // Hubness: normalized degree with steeper curve — top hubs stand out clearly
+    // pow(x, 0.45) widens the gap between low-degree and high-degree nodes
+    hubnesses[i] = maxDegree > 0 ? Math.pow(nodes[i].degree / maxDegree, 0.45) : 0;
 
     // Pre-compute discipline color for each node
     const disc = nodes[i].discipline as Discipline;
