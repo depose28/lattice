@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useGraphStore } from "@/store/graphStore";
 
 export function ModeToggle() {
@@ -8,6 +8,8 @@ export function ModeToggle() {
   const setAppMode = useGraphStore((s) => s.setAppMode);
   const nodes = useGraphStore((s) => s.nodes);
   const oracleLoading = useGraphStore((s) => s.oracleLoading);
+  const oracleRef = useRef<HTMLButtonElement>(null);
+  const exploreRef = useRef<HTMLButtonElement>(null);
 
   // Tab key toggles mode (when not in an input)
   useEffect(() => {
@@ -33,7 +35,7 @@ export function ModeToggle() {
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
       <div
-        className="relative flex items-stretch rounded-xl p-1.5"
+        className="relative grid grid-cols-2 rounded-xl"
         style={{
           background: "rgba(7, 11, 15, 0.92)",
           border: "1px solid rgba(60, 90, 110, 0.15)",
@@ -41,38 +43,29 @@ export function ModeToggle() {
           boxShadow: "0 4px 24px rgba(0, 0, 0, 0.3)",
         }}
       >
-        {/* Sliding background pill */}
-        <div
-          className="absolute top-1.5 bottom-1.5 rounded-lg transition-all duration-300 ease-out"
-          style={{
-            width: "calc(50% - 6px)",
-            left: isOracle ? "6px" : "calc(50%)",
-            background: isOracle
-              ? "rgba(232, 160, 48, 0.12)"
-              : "rgba(140, 180, 204, 0.08)",
-            border: isOracle
-              ? "1px solid rgba(232, 160, 48, 0.25)"
-              : "1px solid rgba(140, 180, 204, 0.15)",
-          }}
-        />
-
         <button
+          ref={oracleRef}
           onClick={() => setAppMode("oracle")}
-          className="relative z-10 px-8 py-3 rounded-lg font-mono text-[11px] tracking-[0.2em]
-            uppercase transition-colors duration-300 min-w-[120px] text-center"
+          className="relative px-10 py-3.5 rounded-xl font-mono text-[11px] tracking-[0.2em]
+            uppercase transition-all duration-300 min-w-[130px] text-center"
           style={{
             color: isOracle ? "#E8A030" : "#3A5565",
+            background: isOracle ? "rgba(232, 160, 48, 0.13)" : "transparent",
+            border: isOracle ? "1px solid rgba(232, 160, 48, 0.25)" : "1px solid transparent",
           }}
         >
           Oracle
         </button>
 
         <button
+          ref={exploreRef}
           onClick={() => setAppMode("explore")}
-          className="relative z-10 px-8 py-3 rounded-lg font-mono text-[11px] tracking-[0.2em]
-            uppercase transition-colors duration-300 min-w-[120px] text-center"
+          className="relative px-10 py-3.5 rounded-xl font-mono text-[11px] tracking-[0.2em]
+            uppercase transition-all duration-300 min-w-[130px] text-center"
           style={{
             color: !isOracle ? "#B0C8D8" : "#3A5565",
+            background: !isOracle ? "rgba(140, 180, 204, 0.08)" : "transparent",
+            border: !isOracle ? "1px solid rgba(140, 180, 204, 0.15)" : "1px solid transparent",
           }}
         >
           Explore
