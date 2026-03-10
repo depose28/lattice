@@ -18,10 +18,13 @@ The assistant calls the appropriate Lattice tools behind the scenes and weaves t
 
 ## Installation
 
-Install the MCP server package from npm:
+Clone the repo and build the MCP server:
 
 ```bash
-npm install @lattice/mcp-server
+git clone https://github.com/depose28/lattice.git
+cd lattice/packages/mcp-server
+npm install
+npm run build
 ```
 
 The server bundles the full graph data (all 700 models and 2,796 edges) locally. No network calls are needed for browsing, searching, or filtering. Only the Oracle tool requires an internet connection to reach the Anthropic API.
@@ -38,14 +41,16 @@ Add the following to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "lattice": {
-      "command": "npx",
-      "args": ["@lattice/mcp-server"]
+      "command": "node",
+      "args": ["/path/to/lattice/packages/mcp-server/dist/index.js"]
     }
   }
 }
 ```
 
-On macOS, this file is located at `~/Library/Application Support/Claude/claude_desktop_config.json`. On Windows, it is at `%APPDATA%\Claude\claude_desktop_config.json`. Create the file if it does not exist.
+Replace `/path/to/lattice` with the actual path where you cloned the repository.
+
+On macOS, the config file is at `~/Library/Application Support/Claude/claude_desktop_config.json`. On Windows, it is at `%APPDATA%\Claude\claude_desktop_config.json`. Create the file if it does not exist.
 
 Restart Claude Desktop after saving the configuration. You should see "lattice" appear in the MCP tools list when you start a new conversation.
 
@@ -54,14 +59,14 @@ Restart Claude Desktop after saving the configuration. You should see "lattice" 
 Register the server with a single command:
 
 ```bash
-claude mcp add lattice npx @lattice/mcp-server
+claude mcp add lattice node /path/to/lattice/packages/mcp-server/dist/index.js
 ```
 
-The server is available immediately in your next Claude Code session.
+Replace `/path/to/lattice` with your clone location. The server is available immediately in your next Claude Code session.
 
 ### Other MCP Clients
 
-Any client that implements the MCP specification can connect to the Lattice server. Point it at the `@lattice/mcp-server` package using `npx` as the transport command. Consult your client's documentation for the exact configuration format.
+Any client that implements the MCP specification can connect to the Lattice server. Point it at the built server entry point (`packages/mcp-server/dist/index.js`) using `node` as the command. Consult your client's documentation for the exact configuration format.
 
 ---
 
@@ -211,7 +216,7 @@ The MCP server bundles the complete Lattice dataset:
 
 - **700 mental models** spanning 10 disciplines, from Probability to Philosophy.
 - **2,796 edges** encoding 8 relationship types between models.
-- All data is included in the npm package. No external data fetching is required for any tool except `oracle`.
+- All data is bundled with the server. No external data fetching is required for any tool except `oracle`.
 
 The bundled data is identical to what the Lattice web application uses. Model IDs, names, and relationships are consistent between the MCP server and the browser-based graph.
 
