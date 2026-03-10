@@ -28,47 +28,57 @@ export function ModeToggle() {
   if (nodes.length === 0) return null;
   if (oracleLoading) return null;
 
-  const isExplore = appMode === "explore";
   const isOracle = appMode === "oracle";
 
   return (
     <div
-      className="fixed top-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 rounded-full px-3 py-2.5"
-      style={{
-        background: "rgba(7, 11, 15, 0.88)",
-        border: "1px solid rgba(60, 90, 110, 0.2)",
-        backdropFilter: "blur(10px)",
-      }}
+      className="fixed top-5 left-1/2 -translate-x-1/2 z-30"
     >
-      <button
-        onClick={() => setAppMode("oracle")}
-        className="relative px-12 py-3.5 rounded-full font-mono text-[14px] tracking-widest
-          uppercase transition-all duration-300"
-        style={{
-          color: isOracle ? "#E8A030" : "#4A6A7A",
-          background: isOracle ? "rgba(232, 160, 48, 0.12)" : "transparent",
-          boxShadow: isOracle ? "0 0 16px rgba(232, 160, 48, 0.1)" : "none",
-        }}
-      >
-        Oracle
-      </button>
-
       <div
-        className="w-px h-5 mx-0.5 flex-shrink-0"
-        style={{ background: "rgba(60, 90, 110, 0.25)" }}
-      />
-
-      <button
-        onClick={() => setAppMode("explore")}
-        className="relative px-12 py-3.5 rounded-full font-mono text-[14px] tracking-widest
-          uppercase transition-all duration-300"
+        className="relative flex items-center rounded-lg overflow-hidden"
         style={{
-          color: isExplore ? "#B0C8D8" : "#4A6A7A",
-          background: isExplore ? "rgba(42, 59, 71, 0.4)" : "transparent",
+          background: "rgba(7, 11, 15, 0.92)",
+          border: "1px solid rgba(60, 90, 110, 0.18)",
+          backdropFilter: "blur(12px)",
         }}
       >
-        Explore
-      </button>
+        {/* Sliding indicator */}
+        <div
+          className="absolute top-0 bottom-0 rounded-lg transition-all duration-300 ease-out"
+          style={{
+            width: "50%",
+            left: isOracle ? "0%" : "50%",
+            background: isOracle
+              ? "rgba(232, 160, 48, 0.15)"
+              : "rgba(140, 180, 204, 0.1)",
+            borderBottom: isOracle
+              ? "2px solid rgba(232, 160, 48, 0.6)"
+              : "2px solid rgba(140, 180, 204, 0.4)",
+          }}
+        />
+
+        <button
+          onClick={() => setAppMode("oracle")}
+          className="relative z-10 px-10 py-3 font-mono text-[12px] tracking-[0.2em]
+            uppercase transition-colors duration-300"
+          style={{
+            color: isOracle ? "#E8A030" : "#4A6A7A",
+          }}
+        >
+          Oracle
+        </button>
+
+        <button
+          onClick={() => setAppMode("explore")}
+          className="relative z-10 px-10 py-3 font-mono text-[12px] tracking-[0.2em]
+            uppercase transition-colors duration-300"
+          style={{
+            color: !isOracle ? "#B0C8D8" : "#4A6A7A",
+          }}
+        >
+          Explore
+        </button>
+      </div>
     </div>
   );
 }
