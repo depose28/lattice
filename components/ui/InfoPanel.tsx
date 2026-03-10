@@ -211,18 +211,22 @@ export function InfoPanel() {
 
         {/* Summary */}
         <p
-          className="font-sans text-[14px] leading-[1.85]"
+          className="font-sans text-[14px] leading-[1.85] mb-0"
           style={{ color: "#9AB0C0" }}
         >
           {summary}
         </p>
       </div>
 
-      {/* ── Divider ── */}
-      <div className="mx-7 h-px flex-shrink-0" style={{ background: "#1A2830" }} />
+      {/* ── Spacer + Divider ── */}
+      <div className="flex-shrink-0 px-7">
+        <div className="h-8" />
+        <div className="h-px" style={{ background: "#1A2830" }} />
+        <div className="h-8" />
+      </div>
 
       {/* ── Bottom section: connections (scrollable) ── */}
-      <div className="flex-1 overflow-y-auto px-7 pt-8 pb-6">
+      <div className="flex-1 overflow-y-auto px-7 pb-6">
         {topConnections.length > 0 && (
           <section className="mb-6">
             <SectionHeader>Connections</SectionHeader>
