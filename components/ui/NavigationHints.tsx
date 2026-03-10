@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useGraphStore } from "@/store/graphStore";
 
 export function NavigationHints() {
-  const appMode = useGraphStore((s) => s.appMode);
   const nodes = useGraphStore((s) => s.nodes);
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const [dismissed, setDismissed] = useState(false);
@@ -17,19 +16,14 @@ export function NavigationHints() {
     return () => clearTimeout(timer);
   }, [nodes.length]);
 
-  // Auto-dismiss after first interaction
+  // Auto-dismiss after 20s of visibility
   useEffect(() => {
     if (!visible) return;
-    function onInteract() {
-      // Dismiss after a delay so it doesn't vanish instantly on first click
-      setTimeout(() => setDismissed(true), 4000);
-    }
-    window.addEventListener("click", onInteract, { once: true });
-    return () => window.removeEventListener("click", onInteract);
+    const timer = setTimeout(() => setDismissed(true), 20000);
+    return () => clearTimeout(timer);
   }, [visible]);
 
   if (!visible || nodes.length === 0) return null;
-  if (appMode !== "explore") return null;
 
   // Show different hints based on state
   const hasSelection = selectedNodeId !== null;

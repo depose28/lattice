@@ -6,10 +6,10 @@ import { useGraphStore } from "@/store/graphStore";
 const STORAGE_KEY = "framewerk-onboarded";
 
 const hints = [
-  { key: "click", text: "Click any node to explore a mental model" },
-  { key: "dblclick", text: "Double-click to enter Synapse Mode — immersive exploration" },
-  { key: "search", text: "Press ⌘K to search 700 models instantly" },
-  { key: "disciplines", text: "Filter by discipline in the bottom-left legend" },
+  { key: "graph", text: "700 mental models connected by 2,796 semantic edges" },
+  { key: "explore", text: "Click nodes to explore · Double-click for Synapse Mode flythrough" },
+  { key: "oracle", text: "Switch to Oracle — describe a situation and get a thinking framework" },
+  { key: "search", text: "⌘K to search · Filter by discipline · Spotlight edge types" },
 ];
 
 export function OnboardingHints() {
