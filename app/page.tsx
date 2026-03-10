@@ -22,7 +22,7 @@ export default function Home() {
       {/* Bottom-right links */}
       <div className="fixed bottom-5 right-5 z-20 flex items-center gap-6">
         <a
-          href={`${process.env.NEXT_PUBLIC_DOCS_URL ?? "http://localhost:3001"}/integrations/mcp-server`}
+          href="/docs/integrations/mcp-server"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2.5 font-mono text-[13px] text-[#7A9AAA]
@@ -38,7 +38,7 @@ export default function Home() {
         </a>
         <span className="text-[#4A6070]">&middot;</span>
         <a
-          href={process.env.NEXT_PUBLIC_DOCS_URL ?? "http://localhost:3001"}
+          href="/docs"
           target="_blank"
           rel="noopener noreferrer"
           className="font-mono text-[13px] text-[#7A9AAA]

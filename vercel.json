@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/docs/:path*",
+      "destination": "https://docs-site-six-sepia.vercel.app/docs/:path*"
+    }
+  ]
+}
