@@ -672,7 +672,7 @@ export function LatticeScene() {
         if (d > maxDist) maxDist = d;
       }
       const fov = camera.fov * (Math.PI / 180);
-      const cameraZ = (maxDist * 0.75) / Math.tan(fov / 2);
+      const cameraZ = (maxDist * 0.95) / Math.tan(fov / 2);
       const initialZ = Math.max(cameraZ, 50);
       camera.position.set(0, 0, initialZ);
       camera.lookAt(0, 0, 0);
