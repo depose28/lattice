@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGraphStore } from "@/store/graphStore";
 import { DISCIPLINE_COLORS, EDGE_PARTICLE_COLORS } from "@/lib/constants";
 import type { Discipline } from "@/lib/graph/types";
@@ -50,6 +50,14 @@ export function GraphLegend() {
 
   const hasDisciplineFilter = activeDisciplines.size > 0;
 
+  // Show "click to filter" hint until first interaction
+  const [hintVisible, setHintVisible] = useState(true);
+  useEffect(() => {
+    if (hasDisciplineFilter || highlightedEdgeType !== null) {
+      setHintVisible(false);
+    }
+  }, [hasDisciplineFilter, highlightedEdgeType]);
+
   return (
     <div
       className="fixed left-5 z-20 select-none transition-all duration-500"
@@ -62,9 +70,19 @@ export function GraphLegend() {
     >
       {/* Disciplines */}
       <div className="space-y-1.5 mb-5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] block mb-2">
-          Disciplines
-        </span>
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A]">
+            Disciplines
+          </span>
+          {hintVisible && (
+            <span
+              className="font-mono text-[9px] text-[#3A5565] transition-opacity duration-1000"
+              style={{ animation: "subtleFlicker 3s ease-in-out infinite" }}
+            >
+              click to filter
+            </span>
+          )}
+        </div>
         {disciplines.map((d) => {
           const color = DISCIPLINE_COLORS[d];
           const isActive = activeDisciplines.has(d);
@@ -99,12 +117,22 @@ export function GraphLegend() {
 
       {/* Edge types — collapsible, highlight mode */}
       <div>
-        <button
-          onClick={() => setEdgesOpen(!edgesOpen)}
-          className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] hover:text-[#8CB4CC] transition-colors mb-2 block"
-        >
-          {edgesOpen ? "— Connections" : "+ Connections"}
-        </button>
+        <div className="flex items-baseline gap-2 mb-2">
+          <button
+            onClick={() => setEdgesOpen(!edgesOpen)}
+            className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] hover:text-[#8CB4CC] transition-colors"
+          >
+            {edgesOpen ? "— Connections" : "+ Connections"}
+          </button>
+          {!edgesOpen && hintVisible && (
+            <span
+              className="font-mono text-[9px] text-[#3A5565] transition-opacity duration-1000"
+              style={{ animation: "subtleFlicker 3s ease-in-out 1.5s infinite" }}
+            >
+              click to spotlight
+            </span>
+          )}
+        </div>
         {edgesOpen && (
           <div className="space-y-1.5">
             {edgeTypes.map((type) => {

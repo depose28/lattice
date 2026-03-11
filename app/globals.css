@@ -48,6 +48,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Legend hint flicker */
+@keyframes subtleFlicker {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 /* Loading screen */
 @keyframes neuronPulse {
   0%, 100% { transform: scale(0.8); opacity: 0.3; }
