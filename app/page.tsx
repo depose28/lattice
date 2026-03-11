@@ -7,6 +7,7 @@ import { OraclePanel } from "@/components/ui/OraclePanel";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { NavigationHints } from "@/components/ui/NavigationHints";
 import { MobileGate } from "@/components/ui/MobileGate";
+import { AutoRotateButton } from "@/components/ui/AutoRotateButton";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
       <OraclePanel />
       <NavigationHints />
       <OnboardingHints />
+      <AutoRotateButton />
       <LoadingScreen />
       {/* Bottom-right links */}
       <div className="fixed bottom-5 right-5 z-20 flex items-center gap-6">

@@ -70,19 +70,9 @@ export function GraphLegend() {
     >
       {/* Disciplines */}
       <div className="space-y-1.5 mb-5">
-        <div className="flex items-baseline gap-2 mb-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A]">
-            Disciplines
-          </span>
-          {hintVisible && (
-            <span
-              className="font-mono text-[9px] text-[#5A7A8A] transition-opacity duration-1000"
-              style={{ animation: "subtleFlicker 3s ease-in-out infinite" }}
-            >
-              · click to filter
-            </span>
-          )}
-        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] block mb-2">
+          Disciplines
+        </span>
         {disciplines.map((d) => {
           const color = DISCIPLINE_COLORS[d];
           const isActive = activeDisciplines.has(d);
@@ -113,26 +103,21 @@ export function GraphLegend() {
             </button>
           );
         })}
+        {hintVisible && (
+          <p className="font-mono text-[9px] text-[#4A6A7A] mt-2 tracking-wide">
+            Click to filter the graph
+          </p>
+        )}
       </div>
 
       {/* Edge types — collapsible, highlight mode */}
       <div>
-        <div className="flex items-baseline gap-2 mb-2">
-          <button
-            onClick={() => setEdgesOpen(!edgesOpen)}
-            className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] hover:text-[#8CB4CC] transition-colors"
-          >
-            {edgesOpen ? "— Connections" : "+ Connections"}
-          </button>
-          {!edgesOpen && hintVisible && (
-            <span
-              className="font-mono text-[9px] text-[#5A7A8A] transition-opacity duration-1000"
-              style={{ animation: "subtleFlicker 3s ease-in-out 1.5s infinite" }}
-            >
-              · click to spotlight
-            </span>
-          )}
-        </div>
+        <button
+          onClick={() => setEdgesOpen(!edgesOpen)}
+          className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#6A8A9A] hover:text-[#8CB4CC] transition-colors mb-2 block"
+        >
+          {edgesOpen ? "— Connections" : "+ Connections"}
+        </button>
         {edgesOpen && (
           <div className="space-y-1.5">
             {edgeTypes.map((type) => {

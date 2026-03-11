@@ -60,10 +60,14 @@ interface GraphState {
   synapseMode: boolean;
   synapseFocusId: string | null;
 
+  // Auto-rotate
+  autoRotate: boolean;
+
   // API key (user-provided, stored in localStorage)
   apiKey: string | null;
 
   // Actions
+  setAutoRotate: (autoRotate: boolean) => void;
   setApiKey: (key: string | null) => void;
   hydrateApiKey: () => void;
   setAppMode: (mode: GraphState["appMode"]) => void;
@@ -144,8 +148,11 @@ export const useGraphStore = create<GraphState>((set) => ({
   synapseMode: false,
   synapseFocusId: null,
 
+  autoRotate: false,
+
   apiKey: null,
 
+  setAutoRotate: (autoRotate) => set({ autoRotate }),
   setApiKey: (key) => {
     if (typeof window !== "undefined") {
       if (key) {

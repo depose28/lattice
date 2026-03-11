@@ -257,6 +257,7 @@ export function LatticeScene() {
     controls.minDistance = 20;
     controls.maxDistance = 400;
     controls.rotateSpeed = 0.5;
+    controls.autoRotateSpeed = 0.4; // very slow — contemplative
     controlsRef.current = controls;
 
     // Post-processing
@@ -497,6 +498,9 @@ export function LatticeScene() {
         camera.position.x += sx * deltaTime;
         camera.position.y += sy * deltaTime;
       }
+
+      // Sync auto-rotate from store
+      controls.autoRotate = useGraphStore.getState().autoRotate;
 
       controls.update();
       composer.render();
