@@ -148,7 +148,7 @@ export const useGraphStore = create<GraphState>((set) => ({
   synapseMode: false,
   synapseFocusId: null,
 
-  autoRotate: false,
+  autoRotate: true,
 
   apiKey: null,
 
